@@ -1,6 +1,7 @@
+import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { NeoLogo, PageShell } from "../components/Shell";
+import { NeoLogo } from "../components/Shell";
 import { useAuth } from "../context/AuthContext";
 import {
   getDashboardStats,
@@ -10,14 +11,201 @@ import {
   type DoctorRow,
 } from "../lib/api";
 
+type Tab = "overview" | "applications" | "doctors" | "assessments" | "settings";
+
+const NAV: { id: Tab; label: string; icon: string }[] = [
+  { id: "overview", label: "Overview", icon: "⊞" },
+  { id: "applications", label: "Applications", icon: "📋" },
+  { id: "doctors", label: "Live Doctors", icon: "👨‍⚕️" },
+  { id: "assessments", label: "Assessments", icon: "🧠" },
+  { id: "settings", label: "Settings", icon: "⚙️" },
+];
+
+const STATUS_COLORS: Record<string, string> = {
+  pending: "bg-amber-100 text-amber-800 border-amber-200",
+  approved: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  rejected: "bg-rose-100 text-rose-800 border-rose-200",
+};
+
+/* ──── animated stat card ──── */
+function StatCard({ label, value, icon, color }: { label: string; value: number | string; icon: string; color: string }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -3, boxShadow: "0 12px 32px rgba(13,148,136,0.18)" }}
+      className="relative overflow-hidden bg-white rounded-3xl border border-teal-50 shadow-glass p-5"
+    >
+      <div className={`absolute top-0 right-0 w-28 h-28 rounded-full ${color} opacity-10 -translate-y-8 translate-x-8`} />
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-xs uppercase tracking-widest text-teal-800/50 font-semibold">{label}</p>
+          <p className="text-4xl font-bold text-teal-950 mt-1">{value}</p>
+        </div>
+        <span className="text-3xl">{icon}</span>
+      </div>
+    </motion.div>
+  );
+}
+
+/* ──── document link pill ──── */
+function DocLink({ href, label }: { href: string; label: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-teal-50 text-teal-700 border border-teal-100 hover:bg-teal-100 transition"
+    >
+      ↗ {label}
+    </a>
+  );
+}
+
+/* ──── doctor application row ──── */
+function AppRow({
+  app,
+  busy,
+  note,
+  onNote,
+  onDecide,
+}: {
+  app: DoctorRow;
+  busy: boolean;
+  note: string;
+  onNote: (v: string) => void;
+  onDecide: (status: "approved" | "rejected") => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-white rounded-3xl border border-teal-50 shadow-sm overflow-hidden"
+    >
+      <div
+        className="flex flex-wrap items-start gap-4 p-5 cursor-pointer hover:bg-teal-50/30 transition"
+        onClick={() => setExpanded((v) => !v)}
+      >
+        {/* avatar */}
+        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-100 to-cyan-100 border border-teal-50 overflow-hidden flex-shrink-0 flex items-center justify-center">
+          {app.photo_url ? (
+            <img src={app.photo_url} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-lg font-bold text-teal-700">{app.full_name.slice(0, 1)}</span>
+          )}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-bold text-teal-950 truncate">{app.full_name}</h3>
+            <span className={`text-[10px] px-2 py-0.5 rounded-full border font-semibold ${STATUS_COLORS[app.status]}`}>
+              {app.status}
+            </span>
+          </div>
+          <p className="text-xs text-teal-800/60 mt-0.5">{app.email} · {app.phone}</p>
+          <p className="text-sm text-teal-900/80 mt-1">
+            {app.specialization} · {app.experience_years}+ yrs · ₹{app.consultation_fee}
+          </p>
+          <p className="text-xs text-teal-800/50">{app.languages.join(", ")}</p>
+        </div>
+
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <motion.span animate={{ rotate: expanded ? 180 : 0 }} className="text-teal-400 text-lg">⌄</motion.span>
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="overflow-hidden border-t border-teal-50"
+          >
+            <div className="p-5 space-y-4">
+              {/* documents */}
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-teal-800/60 uppercase tracking-wider">Documents</p>
+                <div className="flex flex-wrap gap-2">
+                  {app.degree_url && <DocLink href={app.degree_url} label="Degree" />}
+                  {app.license_url && <DocLink href={app.license_url} label="License" />}
+                  {app.gov_id_url && <DocLink href={app.gov_id_url} label="Gov ID" />}
+                  {app.photo_url && <DocLink href={app.photo_url} label="Photo" />}
+                  {!app.degree_url && !app.license_url && !app.gov_id_url && (
+                    <span className="text-xs text-teal-800/40">No documents uploaded</span>
+                  )}
+                </div>
+              </div>
+
+              {/* clinic */}
+              {app.clinic_name && (
+                <div className="text-sm text-teal-900/70 bg-teal-50/50 rounded-2xl px-4 py-3">
+                  <span className="font-semibold text-teal-900">{app.clinic_name}</span>
+                  {app.clinic_address && <p className="text-xs mt-0.5">{app.clinic_address}</p>}
+                </div>
+              )}
+
+              {/* admin note */}
+              <label className="block text-xs font-semibold text-teal-800/60 uppercase tracking-wider">
+                Admin note (optional)
+                <textarea
+                  rows={2}
+                  value={note}
+                  onChange={(e) => onNote(e.target.value)}
+                  placeholder="Reason for rejection, request for more info…"
+                  className="mt-1.5 w-full rounded-2xl border border-teal-100 bg-white px-3 py-2 text-sm text-teal-900 font-normal normal-case tracking-normal"
+                />
+              </label>
+
+              {/* actions */}
+              <div className="flex gap-3">
+                <motion.button
+                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                  disabled={busy}
+                  onClick={() => onDecide("approved")}
+                  className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-teal-500 to-emerald-500 text-white text-sm font-bold shadow-lg disabled:opacity-50"
+                >
+                  {busy ? "Saving…" : "✓ Approve"}
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                  disabled={busy}
+                  onClick={() => onDecide("rejected")}
+                  className="flex-1 py-3 rounded-2xl border-2 border-rose-200 text-rose-700 text-sm font-bold hover:bg-rose-50 transition disabled:opacity-50"
+                >
+                  ✕ Reject
+                </motion.button>
+              </div>
+
+              {app.admin_note && (
+                <p className="text-xs text-teal-800/60 bg-amber-50 border border-amber-100 rounded-2xl px-3 py-2">
+                  Previous note: {app.admin_note}
+                </p>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+/* ──────────────────────── main component ────────────────────────── */
 export default function AdminDashboard() {
   const { user, signOut } = useAuth();
+  const [tab, setTab] = useState<Tab>("overview");
   const [apps, setApps] = useState<DoctorRow[]>([]);
   const [doctors, setDoctors] = useState<DoctorRow[]>([]);
   const [stats, setStats] = useState({ pendingDoctors: 0, approvedDoctors: 0, assessmentsCount: 0 });
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [note, setNote] = useState("");
-  const [toast, setToast] = useState<string | null>(null);
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const [toast, setToast] = useState<{ msg: string; kind: "success" | "error" } | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [searchQ, setSearchQ] = useState("");
 
   const applyUrl = useMemo(() => `${window.location.origin}/apply`, []);
 
@@ -32,213 +220,378 @@ export default function AdminDashboard() {
     setStats(s);
   }
 
-  useEffect(() => {
-    void refresh();
-  }, []);
+  useEffect(() => { void refresh(); }, []);
+
+  function showToast(msg: string, kind: "success" | "error" = "success") {
+    setToast({ msg, kind });
+    setTimeout(() => setToast(null), 3000);
+  }
 
   async function copyLink() {
     try {
       await navigator.clipboard.writeText(applyUrl);
-      setToast("Doctor application link copied");
-      setTimeout(() => setToast(null), 2500);
+      showToast("Doctor application link copied to clipboard!");
     } catch {
-      setToast("Unable to access clipboard");
+      showToast("Unable to copy — link: " + applyUrl, "error");
     }
   }
 
   async function decide(id: string, status: "approved" | "rejected") {
     setBusyId(id);
     try {
-      await setDoctorApplicationStatus(id, status, note);
-      setNote("");
+      await setDoctorApplicationStatus(id, status, notes[id]);
+      setNotes((n) => { const c = { ...n }; delete c[id]; return c; });
+      showToast(status === "approved" ? "Doctor approved and published!" : "Application rejected.");
       await refresh();
+      if (status === "approved") setTab("doctors");
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "Action failed", "error");
     } finally {
       setBusyId(null);
     }
   }
 
-  return (
-    <PageShell>
-      <div className="max-w-6xl mx-auto px-4 py-10 space-y-8">
-        <header className="flex flex-wrap items-center justify-between gap-4">
-          <div>
+  const filteredApps = useMemo(() =>
+    apps.filter((a) =>
+      !searchQ ||
+      a.full_name.toLowerCase().includes(searchQ.toLowerCase()) ||
+      a.specialization.toLowerCase().includes(searchQ.toLowerCase()) ||
+      (a.email ?? "").toLowerCase().includes(searchQ.toLowerCase())
+    ), [apps, searchQ]);
+
+  const filteredDoctors = useMemo(() =>
+    doctors.filter((d) =>
+      !searchQ ||
+      d.full_name.toLowerCase().includes(searchQ.toLowerCase()) ||
+      d.specialization.toLowerCase().includes(searchQ.toLowerCase())
+    ), [doctors, searchQ]);
+
+  /* ─── sidebar ─── */
+  const Sidebar = (
+    <motion.aside
+      initial={false}
+      animate={{ width: sidebarOpen ? 220 : 64 }}
+      className="relative flex-shrink-0 bg-white border-r border-teal-50 shadow-sm flex flex-col gap-1 py-4 overflow-hidden"
+    >
+      <div className="px-3 mb-4 flex items-center gap-2 overflow-hidden">
+        {sidebarOpen && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
             <NeoLogo compact />
-            <p className="text-sm text-teal-900/65 mt-2">
-              Console · <span className="font-semibold text-teal-900">{user?.email}</span>
-            </p>
+          </motion.div>
+        )}
+        <motion.button
+          className="ml-auto w-8 h-8 rounded-xl bg-teal-50 flex items-center justify-center text-teal-600 hover:bg-teal-100 transition flex-shrink-0"
+          onClick={() => setSidebarOpen((v) => !v)}
+          aria-label="Toggle sidebar"
+        >
+          {sidebarOpen ? "◀" : "▶"}
+        </motion.button>
+      </div>
+
+      {NAV.map((item) => (
+        <motion.button
+          key={item.id}
+          whileHover={{ x: 2 }}
+          onClick={() => setTab(item.id)}
+          className={`flex items-center gap-3 mx-2 px-3 py-2.5 rounded-2xl text-sm font-medium transition-all text-left
+            ${tab === item.id
+              ? "bg-teal-600 text-white shadow-md shadow-teal-200"
+              : "text-teal-900/70 hover:bg-teal-50"}`}
+        >
+          <span className="text-base flex-shrink-0">{item.icon}</span>
+          <AnimatePresence>
+            {sidebarOpen && (
+              <motion.span
+                initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: "auto" }}
+                exit={{ opacity: 0, width: 0 }} transition={{ duration: 0.15 }}
+                className="overflow-hidden whitespace-nowrap"
+              >
+                {item.label}
+                {item.id === "applications" && apps.length > 0 && (
+                  <span className="ml-1.5 text-xs bg-amber-400 text-white rounded-full px-1.5">
+                    {apps.length}
+                  </span>
+                )}
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </motion.button>
+      ))}
+
+      <div className="mt-auto px-2">
+        <motion.button
+          whileHover={{ x: 2 }}
+          onClick={() => void signOut()}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm font-medium text-rose-600 hover:bg-rose-50 transition"
+        >
+          <span>🚪</span>
+          {sidebarOpen && <span>Logout</span>}
+        </motion.button>
+      </div>
+    </motion.aside>
+  );
+
+  /* ─── main area ─── */
+  return (
+    <div className="min-h-screen bg-[#F2F4F7] flex">
+      {Sidebar}
+
+      <div className="flex-1 overflow-auto">
+        {/* top bar */}
+        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur border-b border-teal-50 px-6 py-4 flex flex-wrap items-center gap-4">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-lg font-bold text-teal-950 capitalize">{tab === "overview" ? "Admin Console" : NAV.find((n) => n.id === tab)?.label}</h1>
+            <p className="text-xs text-teal-800/50">{user?.email}</p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
+          {/* search */}
+          {(tab === "applications" || tab === "doctors") && (
+            <input
+              value={searchQ}
+              onChange={(e) => setSearchQ(e.target.value)}
+              placeholder="Search by name, specialty…"
+              className="rounded-full border border-teal-100 bg-teal-50/50 px-4 py-2 text-sm w-56 focus:outline-none focus:border-teal-400"
+            />
+          )}
+          <div className="flex gap-2">
+            <motion.button
+              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
               onClick={() => void copyLink()}
-              className="px-4 py-2 rounded-full bg-teal-600 text-white text-sm font-semibold shadow hover:bg-teal-700"
+              className="px-4 py-2 rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 text-white text-sm font-semibold shadow"
             >
-              Copy doctor signup link
-            </button>
-            <Link
-              to="/"
-              className="px-4 py-2 rounded-full border border-teal-100 bg-white text-sm font-semibold text-teal-900"
-            >
+              Copy doctor link
+            </motion.button>
+            <Link to="/" className="px-4 py-2 rounded-full border border-teal-100 bg-white text-sm font-semibold text-teal-900 hover:bg-teal-50 transition">
               View site
             </Link>
-            <button
-              type="button"
-              onClick={() => void signOut()}
-              className="px-4 py-2 rounded-full border border-teal-100 bg-white text-sm font-semibold text-teal-900"
-            >
-              Logout
-            </button>
           </div>
         </header>
 
-        {toast && (
-          <div className="fixed bottom-6 right-6 bg-teal-900 text-white text-sm px-4 py-2 rounded-full shadow-lg z-50">
-            {toast}
-          </div>
-        )}
+        <main className="p-6 space-y-6">
+          <AnimatePresence mode="wait">
 
-        <section className="grid sm:grid-cols-3 gap-4">
-          <div className="glass-panel p-4">
-            <p className="text-xs uppercase text-teal-800/60">Pending reviews</p>
-            <p className="text-3xl font-semibold text-teal-950">{stats.pendingDoctors}</p>
-          </div>
-          <div className="glass-panel p-4">
-            <p className="text-xs uppercase text-teal-800/60">Live doctor profiles</p>
-            <p className="text-3xl font-semibold text-teal-950">{stats.approvedDoctors}</p>
-          </div>
-          <div className="glass-panel p-4">
-            <p className="text-xs uppercase text-teal-800/60">Assessments stored</p>
-            <p className="text-3xl font-semibold text-teal-950">{stats.assessmentsCount}</p>
-          </div>
-        </section>
-
-        <section className="space-y-4">
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <h2 className="text-xl font-semibold text-teal-950">Doctor applications</h2>
-            <p className="text-xs text-teal-800/60">Approving publishes a public profile on the marketing site.</p>
-          </div>
-          <div className="glass-panel overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="text-left text-xs uppercase tracking-wide text-teal-800/60 border-b border-teal-100">
-                <tr>
-                  <th className="px-4 py-3">Physician</th>
-                  <th className="px-4 py-3">Specialty</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {apps.map((a) => (
-                  <tr key={a.id} className="border-b border-teal-50 align-top">
-                    <td className="px-4 py-3">
-                      <div className="font-semibold text-teal-950">{a.full_name}</div>
-                      <div className="text-xs text-teal-800/60">{a.email}</div>
-                      <div className="text-xs text-teal-800/60">{a.phone}</div>
-                      <div className="text-xs mt-1 space-x-2">
-                        {a.degree_url && (
-                          <a className="text-teal-700 underline" href={a.degree_url} target="_blank" rel="noreferrer">
-                            Degree
-                          </a>
-                        )}
-                        {a.license_url && (
-                          <a className="text-teal-700 underline" href={a.license_url} target="_blank" rel="noreferrer">
-                            License
-                          </a>
-                        )}
-                        {a.gov_id_url && (
-                          <a className="text-teal-700 underline" href={a.gov_id_url} target="_blank" rel="noreferrer">
-                            ID
-                          </a>
-                        )}
-                        {a.photo_url && (
-                          <a className="text-teal-700 underline" href={a.photo_url} target="_blank" rel="noreferrer">
-                            Photo
-                          </a>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-teal-900/80">
-                      <div>{a.specialization}</div>
-                      <div className="text-xs text-teal-800/60">{a.experience_years}+ yrs</div>
-                      <div className="text-xs text-teal-800/60">₹{a.consultation_fee}</div>
-                      <div className="text-xs text-teal-800/60">{a.languages.join(", ")}</div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-xs font-semibold px-2 py-1 rounded-full bg-amber-50 text-amber-800">
-                        {a.status}
-                      </span>
-                      {a.admin_note && <p className="text-xs text-teal-800/60 mt-1">{a.admin_note}</p>}
-                    </td>
-                    <td className="px-4 py-3 space-y-2">
-                      <button
-                        type="button"
-                        disabled={busyId === a.id}
-                        onClick={() => void decide(a.id, "approved")}
-                        className="block w-full px-3 py-2 rounded-xl bg-teal-600 text-white text-xs font-semibold disabled:opacity-50"
-                      >
-                        Approve
-                      </button>
-                      <button
-                        type="button"
-                        disabled={busyId === a.id}
-                        onClick={() => void decide(a.id, "rejected")}
-                        className="block w-full px-3 py-2 rounded-xl border border-rose-200 text-rose-700 text-xs font-semibold disabled:opacity-50"
-                      >
-                        Reject
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {apps.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="px-4 py-6 text-center text-teal-900/60">
-                      No pending applications.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-          <label className="block text-xs text-teal-800/70">
-            Optional note on decision
-            <textarea
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              rows={2}
-              className="mt-1 w-full rounded-2xl border border-teal-100 bg-white/90 px-3 py-2 text-sm"
-            />
-          </label>
-        </section>
-
-        <section className="space-y-4">
-          <h2 className="text-xl font-semibold text-teal-950">Published doctors</h2>
-          <div className="grid md:grid-cols-2 gap-4">
-            {doctors.map((d) => (
-              <div key={d.id} className="glass-panel p-4 flex gap-3">
-                <div className="w-14 h-14 rounded-2xl bg-teal-100 overflow-hidden flex-shrink-0">
-                  {d.photo_url ? (
-                    <img src={d.photo_url} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center font-semibold text-teal-800">
-                      {d.full_name.slice(0, 1)}
-                    </div>
-                  )}
+            {/* ── Overview ── */}
+            {tab === "overview" && (
+              <motion.div key="overview" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
+                <div className="grid sm:grid-cols-3 gap-4">
+                  <StatCard label="Pending Reviews" value={stats.pendingDoctors} icon="⏳" color="bg-amber-400" />
+                  <StatCard label="Live Doctors" value={stats.approvedDoctors} icon="✅" color="bg-teal-400" />
+                  <StatCard label="Assessments" value={stats.assessmentsCount} icon="📊" color="bg-violet-400" />
                 </div>
-                <div>
-                  <p className="font-semibold text-teal-950">{d.full_name}</p>
-                  <p className="text-xs text-teal-800/70">{d.specialization}</p>
-                  <p className="text-xs text-teal-800/60 mt-1">
-                    ★ {Number(d.rating).toFixed(1)} · {d.review_count} reviews
+
+                {/* quick actions */}
+                <div className="bg-white rounded-3xl border border-teal-50 shadow-glass p-6 space-y-3">
+                  <h2 className="font-bold text-teal-950">Quick actions</h2>
+                  <div className="grid sm:grid-cols-3 gap-3">
+                    {[
+                      { label: "Review pending doctors", count: apps.length, tab: "applications", color: "from-amber-400 to-orange-500" },
+                      { label: "View live doctors", count: doctors.length, tab: "doctors", color: "from-teal-400 to-emerald-500" },
+                      { label: "Copy doctor signup link", count: null, tab: null, color: "from-violet-400 to-purple-500" },
+                    ].map((a) => (
+                      <motion.div
+                        key={a.label}
+                        whileHover={{ y: -2 }}
+                        onClick={() => a.tab ? setTab(a.tab as Tab) : void copyLink()}
+                        className="cursor-pointer rounded-2xl bg-gradient-to-br p-[1px] shadow-sm"
+                        style={{ background: `linear-gradient(135deg, ${a.color.includes("amber") ? "#fbbf24,#f97316" : a.color.includes("teal") ? "#2dd4bf,#10b981" : "#a78bfa,#8b5cf6"})` }}
+                      >
+                        <div className="bg-white rounded-2xl p-4">
+                          <p className="text-sm font-semibold text-teal-950">{a.label}</p>
+                          {a.count !== null && <p className="text-2xl font-bold text-teal-700 mt-1">{a.count}</p>}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* recent applications preview */}
+                {apps.length > 0 && (
+                  <div className="bg-white rounded-3xl border border-teal-50 shadow-glass p-6 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h2 className="font-bold text-teal-950">Pending applications</h2>
+                      <button onClick={() => setTab("applications")} className="text-xs font-semibold text-teal-600 hover:text-teal-800">View all →</button>
+                    </div>
+                    <div className="space-y-2">
+                      {apps.slice(0, 3).map((a) => (
+                        <div key={a.id} className="flex items-center gap-3 p-3 rounded-2xl bg-amber-50 border border-amber-100">
+                          <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-sm">
+                            {a.full_name.slice(0, 1)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-teal-950 text-sm truncate">{a.full_name}</p>
+                            <p className="text-xs text-teal-800/60">{a.specialization}</p>
+                          </div>
+                          <button
+                            onClick={() => setTab("applications")}
+                            className="text-xs font-semibold text-amber-700 bg-amber-100 px-3 py-1 rounded-full hover:bg-amber-200 transition"
+                          >
+                            Review
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* ── Applications ── */}
+            {tab === "applications" && (
+              <motion.div key="apps" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm text-teal-900/70">
+                    {filteredApps.length} application{filteredApps.length !== 1 ? "s" : ""} pending review
+                  </p>
+                  <p className="text-xs text-teal-800/50 bg-white border border-teal-100 px-3 py-1 rounded-full">
+                    Approving publishes to public site
                   </p>
                 </div>
-              </div>
-            ))}
-            {doctors.length === 0 && (
-              <p className="text-sm text-teal-900/65">No approved profiles. Approve an application or run the seed SQL.</p>
+
+                {filteredApps.length === 0 ? (
+                  <div className="text-center py-16 bg-white rounded-3xl border border-teal-50">
+                    <p className="text-5xl mb-3">🎉</p>
+                    <p className="font-semibold text-teal-950">All caught up!</p>
+                    <p className="text-sm text-teal-900/60 mt-1">No pending doctor applications.</p>
+                  </div>
+                ) : (
+                  filteredApps.map((app) => (
+                    <AppRow
+                      key={app.id}
+                      app={app}
+                      busy={busyId === app.id}
+                      note={notes[app.id] ?? ""}
+                      onNote={(v) => setNotes((n) => ({ ...n, [app.id]: v }))}
+                      onDecide={(status) => void decide(app.id, status)}
+                    />
+                  ))
+                )}
+              </motion.div>
             )}
-          </div>
-        </section>
+
+            {/* ── Live Doctors ── */}
+            {tab === "doctors" && (
+              <motion.div key="doctors" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
+                <p className="text-sm text-teal-900/70">{filteredDoctors.length} verified doctor{filteredDoctors.length !== 1 ? "s" : ""} on NeoHomeo</p>
+
+                {filteredDoctors.length === 0 ? (
+                  <div className="text-center py-16 bg-white rounded-3xl border border-teal-50">
+                    <p className="text-5xl mb-3">👨‍⚕️</p>
+                    <p className="font-semibold text-teal-950">No live doctors yet</p>
+                    <p className="text-sm text-teal-900/60 mt-1">Approve applications to publish profiles.</p>
+                    <button onClick={() => setTab("applications")} className="mt-4 text-sm font-semibold text-teal-600 underline">
+                      Go to applications
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {filteredDoctors.map((d, i) => (
+                      <motion.div
+                        key={d.id}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        whileHover={{ y: -2 }}
+                        className="bg-white rounded-3xl border border-teal-50 shadow-glass p-5 flex gap-4"
+                      >
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-100 to-cyan-100 border border-teal-50 overflow-hidden flex-shrink-0">
+                          {d.photo_url ? (
+                            <img src={d.photo_url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-xl font-bold text-teal-700">
+                              {d.full_name.slice(0, 1)}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <h3 className="font-bold text-teal-950 truncate">{d.full_name}</h3>
+                            <span className="text-amber-600 font-semibold text-sm flex-shrink-0">★ {Number(d.rating).toFixed(1)}</span>
+                          </div>
+                          <p className="text-sm text-teal-800/70">{d.specialization}</p>
+                          <p className="text-xs text-teal-900/55">{d.experience_years}+ yrs · {d.languages.join(", ")}</p>
+                          <p className="text-sm font-semibold text-teal-900">₹{d.consultation_fee}</p>
+                          <div className="flex gap-2 flex-wrap">
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full border font-semibold ${STATUS_COLORS.approved}`}>live</span>
+                            {d.calendly_url && <span className="text-[10px] px-2 py-0.5 rounded-full border font-semibold bg-blue-50 text-blue-700 border-blue-100">Calendly ✓</span>}
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* ── Assessments ── */}
+            {tab === "assessments" && (
+              <motion.div key="assess" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <StatCard label="Total assessments" value={stats.assessmentsCount} icon="🧠" color="bg-violet-400" />
+                  <StatCard label="AI sessions" value={stats.assessmentsCount} icon="🤖" color="bg-cyan-400" />
+                </div>
+                <div className="bg-white rounded-3xl border border-teal-50 shadow-glass p-8 text-center space-y-3">
+                  <p className="text-4xl">📊</p>
+                  <p className="font-bold text-teal-950">Assessment analytics</p>
+                  <p className="text-sm text-teal-900/60 max-w-sm mx-auto">
+                    Full per-patient assessment history, AI summaries, and condition-category analytics are available in the Supabase dashboard while the in-app analytics panel is built out.
+                  </p>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── Settings ── */}
+            {tab === "settings" && (
+              <motion.div key="settings" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
+                <div className="bg-white rounded-3xl border border-teal-50 shadow-glass p-6 space-y-5">
+                  <h2 className="font-bold text-teal-950">Admin settings</h2>
+
+                  <div className="space-y-3">
+                    <label className="block text-sm font-semibold text-teal-900">
+                      Doctor application link
+                      <div className="flex gap-2 mt-1.5">
+                        <input
+                          readOnly
+                          value={applyUrl}
+                          className="flex-1 rounded-2xl border border-teal-100 bg-teal-50/50 px-3 py-2 text-sm font-mono text-teal-800"
+                        />
+                        <motion.button
+                          whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                          onClick={() => void copyLink()}
+                          className="px-4 py-2 rounded-2xl bg-teal-600 text-white text-sm font-semibold"
+                        >
+                          Copy
+                        </motion.button>
+                      </div>
+                      <p className="text-xs text-teal-800/50 mt-1">Share this link with doctors who want to apply to NeoHomeo.</p>
+                    </label>
+                  </div>
+
+                  <div className="rounded-2xl bg-teal-50 border border-teal-100 p-4 text-sm text-teal-900/70">
+                    <p className="font-semibold text-teal-900 mb-1">Admin email</p>
+                    <p className="font-mono text-xs">{user?.email}</p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+          </AnimatePresence>
+        </main>
       </div>
-    </PageShell>
+
+      {/* toast */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            key="toast"
+            initial={{ opacity: 0, y: 24, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 12, scale: 0.97 }}
+            className={`fixed bottom-6 right-6 px-5 py-3 rounded-2xl shadow-xl text-sm font-semibold z-50 flex items-center gap-2
+              ${toast.kind === "success" ? "bg-teal-900 text-white" : "bg-rose-600 text-white"}`}
+          >
+            {toast.kind === "success" ? "✓" : "✕"} {toast.msg}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

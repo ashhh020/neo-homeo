@@ -30,3 +30,90 @@ body {
 .gradient-blob {
   @apply absolute rounded-full mix-blend-multiply filter blur-[120px] opacity-70 pointer-events-none;
 }
+
+/* ─── scrollbar hide ─── */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ─── gradient-x (Dr. Neo CTA button) ─── */
+@keyframes gradient-x {
+  0%, 100% { background-position: 0% 50%; }
+  50%       { background-position: 100% 50%; }
+}
+.animate-gradient-x {
+  background-size: 200% 200%;
+  animation: gradient-x 3s ease infinite;
+}
+
+/* ─── float ─── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33%       { transform: translateY(-14px) rotate(1deg); }
+  66%       { transform: translateY(-6px) rotate(-1deg); }
+}
+.animate-float      { animation: float 7s ease-in-out infinite; }
+.animate-float-slow { animation: float 11s ease-in-out infinite; }
+.animate-float-fast { animation: float 5s ease-in-out infinite; }
+
+/* ─── glow pulse ─── */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 16px rgba(45,212,191,0.3); }
+  50%       { box-shadow: 0 0 36px rgba(45,212,191,0.7), 0 0 60px rgba(34,211,238,0.3); }
+}
+.glow-pulse { animation: glow-pulse 2.4s ease-in-out infinite; }
+
+/* ─── shimmer ─── */
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to   { background-position:  200% 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.6) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s infinite;
+}
+
+/* ─── slide-in-up ─── */
+@keyframes slide-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.slide-in-up { animation: slide-in-up 0.35s cubic-bezier(0.22,1,0.36,1) both; }
+
+/* ─── bounce-in ─── */
+@keyframes bounce-in {
+  0%   { opacity: 0; transform: scale(0.7); }
+  60%  { transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.bounce-in { animation: bounce-in 0.4s cubic-bezier(0.34,1.56,0.64,1) both; }
+
+/* ─── text gradient ─── */
+.text-gradient-teal {
+  background: linear-gradient(135deg, #2dd4bf, #22d3ee, #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── orb drift ─── */
+@keyframes orb-drift {
+  0%   { transform: translate(0,0) scale(1); }
+  25%  { transform: translate(30px,-20px) scale(1.05); }
+  50%  { transform: translate(-10px,30px) scale(0.97); }
+  75%  { transform: translate(-25px,-15px) scale(1.03); }
+  100% { transform: translate(0,0) scale(1); }
+}
+.orb-drift         { animation: orb-drift 18s ease-in-out infinite; }
+.orb-drift-reverse { animation: orb-drift 22s ease-in-out infinite reverse; }
+
+/* ─── hero gradient ─── */
+@keyframes hero-gradient {
+  0%, 100% { background-position: 0% 50%; }
+  50%       { background-position: 100% 50%; }
+}
+.hero-gradient {
+  background: linear-gradient(135deg, #ecfdf5, #f0fdfa, #eff6ff, #f5f3ff);
+  background-size: 300% 300%;
+  animation: hero-gradient 12s ease infinite;
+}
