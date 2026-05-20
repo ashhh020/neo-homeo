@@ -16,7 +16,7 @@ import {
   type PatientDetails,
   type Profile,
 } from "../lib/api";
-import { getSiteUrl, isAdminEmail } from "../lib/env";
+import { isAdminEmail } from "../lib/env";
 import { getSupabase, isSupabaseConfigured } from "../lib/supabase";
 
 export type AuthState = {
@@ -25,7 +25,9 @@ export type AuthState = {
   profile: Profile | null;
   patientDetails: PatientDetails | null;
   loading: boolean;
-  signInWithGoogle: () => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<void>;
+  signUpWithEmail: (email: string, password: string, fullName: string) => Promise<{ needsConfirmation: boolean }>;
+  sendPasswordReset: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 };
@@ -46,42 +48,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       return;
     }
-    const sb = getSupabase();
-    const { data: ures } = await sb.auth.getUser();
-    const u = ures.user;
-    setUser(u);
-    if (!u) {
+    try {
+      const sb = getSupabase();
+      const { data: ures } = await sb.auth.getUser();
+      const u = ures.user;
+      setUser(u);
+      if (!u) {
+        setProfile(null);
+        setPatientDetails(null);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        await ensureAdminRole(u.id, u.email ?? null);
+        if (!isAdminEmail(u.email ?? "")) {
+          await promoteDoctorIfApprovedEmail(u.id, u.email ?? null);
+        }
+      } catch (roleErr) {
+        console.warn("Role check failed:", roleErr);
+      }
+
+      let p = await fetchMyProfile(u.id);
+      if (!p) {
+        const { error: upsertErr } = await sb.from("profiles").upsert(
+          {
+            id: u.id,
+            email: u.email,
+            full_name:
+              (u.user_metadata?.full_name as string) ??
+              u.email?.split("@")[0] ??
+              "Patient",
+            role: "patient",
+            onboarding_completed: false,
+          },
+          { onConflict: "id" }
+        );
+        if (upsertErr) console.warn("Failed to create profile:", upsertErr);
+        p = await fetchMyProfile(u.id).catch(() => null);
+      }
+      setProfile(p);
+
+      if (p?.role === "patient") {
+        const d = await fetchPatientDetails(u.id).catch(() => null);
+        setPatientDetails(d);
+      } else {
+        setPatientDetails(null);
+      }
+    } catch (err) {
+      console.error("Auth initialization failed:", err);
       setProfile(null);
       setPatientDetails(null);
+    } finally {
       setLoading(false);
-      return;
     }
-    await ensureAdminRole(u.id, u.email ?? null);
-    if (!isAdminEmail(u.email ?? "")) {
-      await promoteDoctorIfApprovedEmail(u.id, u.email ?? null);
-    }
-    let p = await fetchMyProfile(u.id);
-    if (!p) {
-      await sb.from("profiles").upsert(
-        {
-          id: u.id,
-          email: u.email,
-          full_name: (u.user_metadata?.full_name as string) ?? u.email?.split("@")[0] ?? "Patient",
-          role: "patient",
-          onboarding_completed: false,
-        },
-        { onConflict: "id" }
-      );
-      p = await fetchMyProfile(u.id);
-    }
-    setProfile(p);
-    if (p?.role === "patient") {
-      const d = await fetchPatientDetails(u.id);
-      setPatientDetails(d);
-    } else {
-      setPatientDetails(null);
-    }
-    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -104,12 +124,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => sub.subscription.unsubscribe();
   }, [refreshProfile]);
 
-  const signInWithGoogle = useCallback(async () => {
+  const signInWithEmail = useCallback(async (email: string, password: string) => {
     if (!isSupabaseConfigured()) throw new Error("Configure Supabase in .env first.");
     const sb = getSupabase();
-    const { error } = await sb.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${getSiteUrl()}/auth/callback` },
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    await refreshProfile();
+  }, [refreshProfile]);
+
+  const signUpWithEmail = useCallback(async (email: string, password: string, fullName: string): Promise<{ needsConfirmation: boolean }> => {
+    if (!isSupabaseConfigured()) throw new Error("Configure Supabase in .env first.");
+    const sb = getSupabase();
+    const { data, error } = await sb.auth.signUp({
+      email,
+      password,
+      options: { data: { full_name: fullName } },
+    });
+    if (error) throw error;
+    // If session is returned immediately, email confirmation is disabled — sign in right away
+    if (data.session) {
+      await refreshProfile();
+      return { needsConfirmation: false };
+    }
+    // Otherwise, try signing in (works if autoconfirm is on but signUp didn't return session)
+    const { error: signInErr } = await sb.auth.signInWithPassword({ email, password });
+    if (!signInErr) {
+      await refreshProfile();
+      return { needsConfirmation: false };
+    }
+    return { needsConfirmation: true };
+  }, [refreshProfile]);
+
+  const sendPasswordReset = useCallback(async (email: string) => {
+    if (!isSupabaseConfigured()) throw new Error("Configure Supabase in .env first.");
+    const sb = getSupabase();
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/reset-password`,
     });
     if (error) throw error;
   }, []);
@@ -131,11 +181,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile,
       patientDetails,
       loading,
-      signInWithGoogle,
+      signInWithEmail,
+      signUpWithEmail,
+      sendPasswordReset,
       signOut,
       refreshProfile,
     }),
-    [session, user, profile, patientDetails, loading, signInWithGoogle, signOut, refreshProfile]
+    [session, user, profile, patientDetails, loading, signInWithEmail, signUpWithEmail, sendPasswordReset, signOut, refreshProfile]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

@@ -5,18 +5,28 @@ import { NeoLogo } from "../components/Shell";
 import { useAuth } from "../context/AuthContext";
 import {
   getDashboardStats,
+  listAllAppointments,
+  listAllAssessmentsAdmin,
+  listAllProfiles,
   listApprovedDoctors,
   listPendingDoctorApplications,
+  notifyDoctorOfDecision,
   setDoctorApplicationStatus,
+  updateUserRole,
+  type AppointmentRow,
+  type AssessmentWithPatient,
   type DoctorRow,
+  type Profile,
 } from "../lib/api";
 
-type Tab = "overview" | "applications" | "doctors" | "assessments" | "settings";
+type Tab = "overview" | "applications" | "doctors" | "patients" | "appointments" | "assessments" | "settings";
 
 const NAV: { id: Tab; label: string; icon: string }[] = [
   { id: "overview", label: "Overview", icon: "⊞" },
   { id: "applications", label: "Applications", icon: "📋" },
   { id: "doctors", label: "Live Doctors", icon: "👨‍⚕️" },
+  { id: "patients", label: "Patients", icon: "🏥" },
+  { id: "appointments", label: "Appointments", icon: "📅" },
   { id: "assessments", label: "Assessments", icon: "🧠" },
   { id: "settings", label: "Settings", icon: "⚙️" },
 ];
@@ -201,6 +211,9 @@ export default function AdminDashboard() {
   const [apps, setApps] = useState<DoctorRow[]>([]);
   const [doctors, setDoctors] = useState<DoctorRow[]>([]);
   const [stats, setStats] = useState({ pendingDoctors: 0, approvedDoctors: 0, assessmentsCount: 0 });
+  const [patients, setPatients] = useState<Profile[]>([]);
+  const [allAppointments, setAllAppointments] = useState<AppointmentRow[]>([]);
+  const [allAssessments, setAllAssessments] = useState<AssessmentWithPatient[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [toast, setToast] = useState<{ msg: string; kind: "success" | "error" } | null>(null);
@@ -210,14 +223,20 @@ export default function AdminDashboard() {
   const applyUrl = useMemo(() => `${window.location.origin}/apply`, []);
 
   async function refresh() {
-    const [a, d, s] = await Promise.all([
+    const [a, d, s, p, appts, assess] = await Promise.all([
       listPendingDoctorApplications(),
       listApprovedDoctors(),
       getDashboardStats(),
+      listAllProfiles(),
+      listAllAppointments(),
+      listAllAssessmentsAdmin(),
     ]);
     setApps(a);
     setDoctors(d);
     setStats(s);
+    setPatients(p);
+    setAllAppointments(appts);
+    setAllAssessments(assess);
   }
 
   useEffect(() => { void refresh(); }, []);
@@ -240,6 +259,8 @@ export default function AdminDashboard() {
     setBusyId(id);
     try {
       await setDoctorApplicationStatus(id, status, notes[id]);
+      // Notify the doctor (best-effort — don't fail the whole action if this errors)
+      void notifyDoctorOfDecision(id, status, notes[id]).catch(() => {});
       setNotes((n) => { const c = { ...n }; delete c[id]; return c; });
       showToast(status === "approved" ? "Doctor approved and published!" : "Application rejected.");
       await refresh();
@@ -265,6 +286,26 @@ export default function AdminDashboard() {
       d.full_name.toLowerCase().includes(searchQ.toLowerCase()) ||
       d.specialization.toLowerCase().includes(searchQ.toLowerCase())
     ), [doctors, searchQ]);
+
+  const filteredPatients = useMemo(() =>
+    patients.filter((p) =>
+      !searchQ ||
+      (p.full_name ?? "").toLowerCase().includes(searchQ.toLowerCase()) ||
+      (p.email ?? "").toLowerCase().includes(searchQ.toLowerCase())
+    ), [patients, searchQ]);
+
+  async function changeRole(userId: string, role: "patient" | "doctor" | "admin") {
+    setBusyId(userId);
+    try {
+      await updateUserRole(userId, role);
+      setPatients((prev) => prev.map((p) => p.id === userId ? { ...p, role } : p));
+      showToast(`Role updated to ${role}`);
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "Failed to update role", "error");
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   /* ─── sidebar ─── */
   const Sidebar = (
@@ -344,11 +385,11 @@ export default function AdminDashboard() {
             <p className="text-xs text-teal-800/50">{user?.email}</p>
           </div>
           {/* search */}
-          {(tab === "applications" || tab === "doctors") && (
+          {(tab === "applications" || tab === "doctors" || tab === "patients" || tab === "appointments" || tab === "assessments") && (
             <input
               value={searchQ}
               onChange={(e) => setSearchQ(e.target.value)}
-              placeholder="Search by name, specialty…"
+              placeholder="Search…"
               className="rounded-full border border-teal-100 bg-teal-50/50 px-4 py-2 text-sm w-56 focus:outline-none focus:border-teal-400"
             />
           )}
@@ -372,9 +413,10 @@ export default function AdminDashboard() {
             {/* ── Overview ── */}
             {tab === "overview" && (
               <motion.div key="overview" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
-                <div className="grid sm:grid-cols-3 gap-4">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <StatCard label="Pending Reviews" value={stats.pendingDoctors} icon="⏳" color="bg-amber-400" />
                   <StatCard label="Live Doctors" value={stats.approvedDoctors} icon="✅" color="bg-teal-400" />
+                  <StatCard label="Registered Users" value={patients.length} icon="🏥" color="bg-blue-400" />
                   <StatCard label="Assessments" value={stats.assessmentsCount} icon="📊" color="bg-violet-400" />
                 </div>
 
@@ -385,6 +427,7 @@ export default function AdminDashboard() {
                     {[
                       { label: "Review pending doctors", count: apps.length, tab: "applications", color: "from-amber-400 to-orange-500" },
                       { label: "View live doctors", count: doctors.length, tab: "doctors", color: "from-teal-400 to-emerald-500" },
+                      { label: "Manage users", count: patients.length, tab: "patients", color: "from-blue-400 to-cyan-500" },
                       { label: "Copy doctor signup link", count: null, tab: null, color: "from-violet-400 to-purple-500" },
                     ].map((a) => (
                       <motion.div
@@ -392,7 +435,7 @@ export default function AdminDashboard() {
                         whileHover={{ y: -2 }}
                         onClick={() => a.tab ? setTab(a.tab as Tab) : void copyLink()}
                         className="cursor-pointer rounded-2xl bg-gradient-to-br p-[1px] shadow-sm"
-                        style={{ background: `linear-gradient(135deg, ${a.color.includes("amber") ? "#fbbf24,#f97316" : a.color.includes("teal") ? "#2dd4bf,#10b981" : "#a78bfa,#8b5cf6"})` }}
+                        style={{ background: `linear-gradient(135deg, ${a.color.includes("amber") ? "#fbbf24,#f97316" : a.color.includes("teal") ? "#2dd4bf,#10b981" : a.color.includes("blue") ? "#60a5fa,#22d3ee" : "#a78bfa,#8b5cf6"})` }}
                       >
                         <div className="bg-white rounded-2xl p-4">
                           <p className="text-sm font-semibold text-teal-950">{a.label}</p>
@@ -521,20 +564,196 @@ export default function AdminDashboard() {
               </motion.div>
             )}
 
+            {/* ── Patients ── */}
+            {tab === "patients" && (
+              <motion.div key="patients" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
+                <p className="text-sm text-teal-900/70">
+                  {filteredPatients.length} user{filteredPatients.length !== 1 ? "s" : ""} registered
+                </p>
+
+                {filteredPatients.length === 0 ? (
+                  <div className="text-center py-16 bg-white rounded-3xl border border-teal-50">
+                    <p className="text-5xl mb-3">🏥</p>
+                    <p className="font-semibold text-teal-950">No users found</p>
+                    <p className="text-sm text-teal-900/60 mt-1">Users appear here once they sign up.</p>
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-3xl border border-teal-50 shadow-glass overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-teal-50 text-left">
+                          <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-teal-800/50">Name</th>
+                          <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-teal-800/50">Email</th>
+                          <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-teal-800/50">Role</th>
+                          <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-teal-800/50">Onboarded</th>
+                          <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-teal-800/50">Change role</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-teal-50">
+                        {filteredPatients.map((p) => (
+                          <motion.tr key={p.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="hover:bg-teal-50/30 transition">
+                            <td className="px-5 py-3 font-medium text-teal-950">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-100 to-cyan-100 flex items-center justify-center text-xs font-bold text-teal-700 flex-shrink-0">
+                                  {(p.full_name ?? p.email ?? "?").slice(0, 1).toUpperCase()}
+                                </div>
+                                <span className="truncate max-w-[140px]">{p.full_name ?? "—"}</span>
+                              </div>
+                            </td>
+                            <td className="px-5 py-3 text-teal-800/70 truncate max-w-[180px]">{p.email ?? "—"}</td>
+                            <td className="px-5 py-3">
+                              <span className={`text-[10px] px-2 py-0.5 rounded-full border font-semibold
+                                ${p.role === "admin" ? "bg-violet-50 text-violet-700 border-violet-200"
+                                  : p.role === "doctor" ? "bg-blue-50 text-blue-700 border-blue-200"
+                                  : "bg-teal-50 text-teal-700 border-teal-200"}`}>
+                                {p.role}
+                              </span>
+                            </td>
+                            <td className="px-5 py-3">
+                              <span className={`text-[10px] px-2 py-0.5 rounded-full border font-semibold
+                                ${p.onboarding_completed ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"}`}>
+                                {p.onboarding_completed ? "✓ Yes" : "Pending"}
+                              </span>
+                            </td>
+                            <td className="px-5 py-3">
+                              <select
+                                value={p.role}
+                                disabled={busyId === p.id}
+                                onChange={(e) => void changeRole(p.id, e.target.value as "patient" | "doctor" | "admin")}
+                                className="rounded-xl border border-teal-100 bg-teal-50/50 px-2 py-1 text-xs font-medium text-teal-900 disabled:opacity-50"
+                              >
+                                <option value="patient">patient</option>
+                                <option value="doctor">doctor</option>
+                                <option value="admin">admin</option>
+                              </select>
+                            </td>
+                          </motion.tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* ── Appointments ── */}
+            {tab === "appointments" && (
+              <motion.div key="appointments" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
+                <p className="text-sm text-teal-900/70">{allAppointments.length} total appointments</p>
+                {allAppointments.length === 0 ? (
+                  <div className="text-center py-16 bg-white rounded-3xl border border-teal-50">
+                    <p className="text-5xl mb-3">📅</p>
+                    <p className="font-semibold text-teal-950">No appointments yet</p>
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-3xl border border-teal-50 shadow-glass overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-teal-50 text-left">
+                          <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-teal-800/50">Patient</th>
+                          <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-teal-800/50">Doctor</th>
+                          <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-teal-800/50">Status</th>
+                          <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-teal-800/50">Scheduled</th>
+                          <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-teal-800/50">Requested</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-teal-50">
+                        {allAppointments
+                          .filter((a) => !searchQ ||
+                            ((a.patient as {full_name?: string})?.full_name ?? "").toLowerCase().includes(searchQ.toLowerCase()) ||
+                            ((a.patient as {email?: string})?.email ?? "").toLowerCase().includes(searchQ.toLowerCase()) ||
+                            ((a.doctor as {full_name?: string})?.full_name ?? "").toLowerCase().includes(searchQ.toLowerCase())
+                          )
+                          .map((appt) => {
+                            const patient = appt.patient as {full_name?: string; email?: string} | undefined;
+                            const doctor = appt.doctor as {full_name?: string; specialization?: string} | undefined;
+                            return (
+                              <tr key={appt.id} className="hover:bg-teal-50/30 transition">
+                                <td className="px-5 py-3">
+                                  <p className="font-medium text-teal-950 truncate max-w-[140px]">{patient?.full_name ?? "—"}</p>
+                                  <p className="text-xs text-teal-800/50 truncate">{patient?.email ?? ""}</p>
+                                </td>
+                                <td className="px-5 py-3">
+                                  <p className="font-medium text-teal-950 truncate max-w-[140px]">{doctor?.full_name ?? "—"}</p>
+                                  <p className="text-xs text-teal-800/50">{doctor?.specialization ?? ""}</p>
+                                </td>
+                                <td className="px-5 py-3">
+                                  <span className={`text-[10px] px-2 py-0.5 rounded-full border font-semibold
+                                    ${appt.status === "confirmed" ? "bg-blue-50 text-blue-700 border-blue-200"
+                                      : appt.status === "completed" ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                      : appt.status === "cancelled" ? "bg-rose-50 text-rose-700 border-rose-200"
+                                      : "bg-amber-50 text-amber-700 border-amber-200"}`}>
+                                    {appt.status}
+                                  </span>
+                                </td>
+                                <td className="px-5 py-3 text-xs text-teal-800/60">
+                                  {appt.scheduled_at ? new Date(appt.scheduled_at).toLocaleDateString() : "—"}
+                                </td>
+                                <td className="px-5 py-3 text-xs text-teal-800/60">
+                                  {new Date(appt.created_at).toLocaleDateString()}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
             {/* ── Assessments ── */}
             {tab === "assessments" && (
               <motion.div key="assess" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
                 <div className="grid sm:grid-cols-2 gap-4">
                   <StatCard label="Total assessments" value={stats.assessmentsCount} icon="🧠" color="bg-violet-400" />
-                  <StatCard label="AI sessions" value={stats.assessmentsCount} icon="🤖" color="bg-cyan-400" />
+                  <StatCard label="Registered users" value={patients.length} icon="🏥" color="bg-cyan-400" />
                 </div>
-                <div className="bg-white rounded-3xl border border-teal-50 shadow-glass p-8 text-center space-y-3">
-                  <p className="text-4xl">📊</p>
-                  <p className="font-bold text-teal-950">Assessment analytics</p>
-                  <p className="text-sm text-teal-900/60 max-w-sm mx-auto">
-                    Full per-patient assessment history, AI summaries, and condition-category analytics are available in the Supabase dashboard while the in-app analytics panel is built out.
-                  </p>
-                </div>
+                {allAssessments.length === 0 ? (
+                  <div className="bg-white rounded-3xl border border-teal-50 shadow-glass p-8 text-center space-y-3">
+                    <p className="text-4xl">📊</p>
+                    <p className="font-bold text-teal-950">No assessments yet</p>
+                    <p className="text-sm text-teal-900/60">Patient assessments will appear here once created.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {allAssessments
+                      .filter((a) => !searchQ ||
+                        ((a.patient as {full_name?: string})?.full_name ?? "").toLowerCase().includes(searchQ.toLowerCase()) ||
+                        ((a.patient as {email?: string})?.email ?? "").toLowerCase().includes(searchQ.toLowerCase())
+                      )
+                      .map((assess) => {
+                        const patient = assess.patient as {full_name?: string; email?: string} | undefined;
+                        return (
+                          <motion.div key={assess.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+                            className="bg-white rounded-3xl border border-teal-50 shadow-glass p-5">
+                            <div className="flex items-start gap-4">
+                              <div className="w-9 h-9 rounded-full bg-violet-100 flex items-center justify-center text-sm font-bold text-violet-700 flex-shrink-0">
+                                {(patient?.full_name ?? patient?.email ?? "?").slice(0, 1).toUpperCase()}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-2 flex-wrap">
+                                  <div>
+                                    <p className="font-semibold text-teal-950">{patient?.full_name ?? "Unknown patient"}</p>
+                                    <p className="text-xs text-teal-800/50">{patient?.email ?? ""}</p>
+                                  </div>
+                                  <div className="text-right flex-shrink-0">
+                                    <p className="text-xs text-teal-800/50">{new Date(assess.created_at).toLocaleString()}</p>
+                                    {assess.language && (
+                                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-100 font-semibold">
+                                        {assess.language}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <p className="text-sm text-teal-900/80 mt-2 whitespace-pre-line line-clamp-3">{assess.summary}</p>
+                              </div>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                  </div>
+                )}
               </motion.div>
             )}
 

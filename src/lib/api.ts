@@ -60,6 +60,7 @@ export type DoctorRow = {
   degree_url: string | null;
   license_url: string | null;
   gov_id_url: string | null;
+  profile_id: string | null;
   created_at: string;
   reviewed_at: string | null;
 };
@@ -305,6 +306,14 @@ export async function getDashboardStats(): Promise<{
   };
 }
 
+export async function fetchDoctorById(id: string): Promise<DoctorRow | null> {
+  if (!isSupabaseConfigured()) return null;
+  const sb = getSupabase();
+  const { data, error } = await sb.from("doctors").select("*").eq("id", id).eq("status", "approved").maybeSingle();
+  if (error) throw error;
+  return data as DoctorRow | null;
+}
+
 export async function fetchDoctorByEmail(email: string): Promise<DoctorRow | null> {
   if (!isSupabaseConfigured()) return null;
   const sb = getSupabase();
@@ -319,4 +328,249 @@ export async function updateDoctorCalendly(doctorId: string, calendlyUrl: string
   const sb = getSupabase();
   const { error } = await sb.from("doctors").update({ calendly_url: calendlyUrl }).eq("id", doctorId);
   if (error) throw error;
+}
+
+export async function updateDoctorProfile(doctorId: string, updates: Partial<Pick<DoctorRow, "bio" | "clinic_name" | "clinic_address" | "consultation_fee" | "languages" | "calendly_url" | "match_keywords">>) {
+  if (!isSupabaseConfigured()) throw new Error("Supabase required");
+  const sb = getSupabase();
+  const { error } = await sb.from("doctors").update(updates).eq("id", doctorId);
+  if (error) throw error;
+}
+
+export async function listAllProfiles(): Promise<Profile[]> {
+  if (!isSupabaseConfigured()) return [];
+  const sb = getSupabase();
+  const { data, error } = await sb.from("profiles").select("*").order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as Profile[];
+}
+
+export async function updateUserRole(userId: string, role: "patient" | "doctor" | "admin") {
+  if (!isSupabaseConfigured()) throw new Error("Supabase required");
+  const sb = getSupabase();
+  const { error } = await sb.from("profiles").update({ role }).eq("id", userId);
+  if (error) throw error;
+}
+
+// ── Notification helpers ──────────────────────────────────────────────
+
+export async function createNotification(input: {
+  userId: string;
+  title: string;
+  body?: string;
+  link?: string;
+}): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const sb = getSupabase();
+  await sb.from("notifications").insert({
+    user_id: input.userId,
+    title: input.title,
+    body: input.body ?? null,
+    link: input.link ?? null,
+  });
+}
+
+export async function notifyDoctorOfDecision(
+  doctorId: string,
+  status: "approved" | "rejected",
+  adminNote?: string
+): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const sb = getSupabase();
+  const { data } = await sb.from("doctors").select("profile_id, full_name").eq("id", doctorId).maybeSingle();
+  if (!data?.profile_id) return;
+  await createNotification({
+    userId: data.profile_id,
+    title: status === "approved"
+      ? "🎉 Your application was approved!"
+      : "Your application was reviewed",
+    body: status === "approved"
+      ? "Welcome to NeoHomeo! Your profile is now live. Log in to complete your dashboard."
+      : `Your application was not approved at this time.${adminNote ? ` Note: ${adminNote}` : ""}`,
+    link: status === "approved" ? "/doctor" : undefined,
+  });
+}
+
+// ── Appointments ──────────────────────────────────────────────────────
+
+export type AppointmentStatus = "pending" | "confirmed" | "cancelled" | "completed";
+
+export type AppointmentRow = {
+  id: string;
+  patient_id: string;
+  doctor_id: string;
+  scheduled_at: string | null;
+  status: AppointmentStatus;
+  notes: string | null;
+  calendly_event_uri: string | null;
+  created_at: string;
+  updated_at: string;
+  // joined
+  doctor?: Pick<DoctorRow, "full_name" | "specialization" | "photo_url" | "consultation_fee">;
+  patient?: Pick<Profile, "full_name" | "email">;
+};
+
+export async function bookAppointment(input: {
+  patientId: string;
+  doctorId: string;
+  scheduledAt?: string;
+  notes?: string;
+  calendlyEventUri?: string;
+}): Promise<string> {
+  if (!isSupabaseConfigured()) throw new Error("Supabase required");
+  const sb = getSupabase();
+  const { data, error } = await sb
+    .from("appointments")
+    .insert({
+      patient_id: input.patientId,
+      doctor_id: input.doctorId,
+      scheduled_at: input.scheduledAt ?? null,
+      notes: input.notes ?? null,
+      calendly_event_uri: input.calendlyEventUri ?? null,
+      status: "pending",
+    })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id as string;
+}
+
+export async function listPatientAppointments(patientId: string): Promise<AppointmentRow[]> {
+  if (!isSupabaseConfigured()) return [];
+  const sb = getSupabase();
+  const { data, error } = await sb
+    .from("appointments")
+    .select("*, doctor:doctors(full_name, specialization, photo_url, consultation_fee)")
+    .eq("patient_id", patientId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as AppointmentRow[];
+}
+
+export async function listDoctorAppointments(doctorId: string): Promise<AppointmentRow[]> {
+  if (!isSupabaseConfigured()) return [];
+  const sb = getSupabase();
+  const { data, error } = await sb
+    .from("appointments")
+    .select("*, patient:profiles(full_name, email)")
+    .eq("doctor_id", doctorId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as AppointmentRow[];
+}
+
+export async function updateAppointmentStatus(
+  id: string,
+  status: AppointmentStatus,
+  notes?: string
+): Promise<void> {
+  if (!isSupabaseConfigured()) throw new Error("Supabase required");
+  const sb = getSupabase();
+  const { error } = await sb
+    .from("appointments")
+    .update({ status, ...(notes !== undefined ? { notes } : {}) })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function listAllAppointments(): Promise<AppointmentRow[]> {
+  if (!isSupabaseConfigured()) return [];
+  const sb = getSupabase();
+  const { data, error } = await sb
+    .from("appointments")
+    .select("*, doctor:doctors(full_name, specialization), patient:profiles(full_name, email)")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as AppointmentRow[];
+}
+
+// ── Notifications ─────────────────────────────────────────────────────
+
+export type NotificationRow = {
+  id: string;
+  user_id: string;
+  title: string;
+  body: string | null;
+  read: boolean;
+  link: string | null;
+  created_at: string;
+};
+
+export async function listNotifications(userId: string): Promise<NotificationRow[]> {
+  if (!isSupabaseConfigured()) return [];
+  const sb = getSupabase();
+  const { data, error } = await sb
+    .from("notifications")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(30);
+  if (error) throw error;
+  return (data ?? []) as NotificationRow[];
+}
+
+export async function markNotificationsRead(userId: string): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const sb = getSupabase();
+  await sb.from("notifications").update({ read: true }).eq("user_id", userId).eq("read", false);
+}
+
+// ── Reviews ───────────────────────────────────────────────────────────
+
+export type ReviewRow = {
+  id: string;
+  patient_id: string;
+  doctor_id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+};
+
+export async function submitReview(input: {
+  patientId: string;
+  doctorId: string;
+  rating: number;
+  comment?: string;
+}): Promise<void> {
+  if (!isSupabaseConfigured()) throw new Error("Supabase required");
+  const sb = getSupabase();
+  const { error } = await sb.from("reviews").upsert(
+    {
+      patient_id: input.patientId,
+      doctor_id: input.doctorId,
+      rating: input.rating,
+      comment: input.comment ?? null,
+    },
+    { onConflict: "patient_id,doctor_id" }
+  );
+  if (error) throw error;
+}
+
+export async function listDoctorReviews(doctorId: string): Promise<ReviewRow[]> {
+  if (!isSupabaseConfigured()) return [];
+  const sb = getSupabase();
+  const { data, error } = await sb
+    .from("reviews")
+    .select("*")
+    .eq("doctor_id", doctorId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as ReviewRow[];
+}
+
+// ── Admin: assessments with patient info ──────────────────────────────
+
+export type AssessmentWithPatient = AssessmentRecord & {
+  patient: Pick<Profile, "full_name" | "email"> | null;
+};
+
+export async function listAllAssessmentsAdmin(): Promise<AssessmentWithPatient[]> {
+  if (!isSupabaseConfigured()) return [];
+  const sb = getSupabase();
+  const { data, error } = await sb
+    .from("assessments")
+    .select("*, patient:profiles(full_name, email)")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as AssessmentWithPatient[];
 }

@@ -1,7 +1,5 @@
 import type { ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
-import { useAuth } from "./context/AuthContext";
-import { isAdminEmail } from "./lib/env";
 import Landing from "./pages/Landing";
 import PatientLogin from "./pages/PatientLogin";
 import PatientSignup from "./pages/PatientSignup";
@@ -13,62 +11,63 @@ import AdminDashboard from "./pages/AdminDashboard";
 import DrNeo from "./pages/DrNeo";
 import AuthCallback from "./pages/AuthCallback";
 import DoctorDashboard from "./pages/DoctorDashboard";
+import DoctorProfile from "./pages/DoctorProfile";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import NotFound from "./pages/NotFound";
+import { useAuth } from "./context/AuthContext";
 
+function Spinner() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-[#F2F4F7]">
+      <div className="w-10 h-10 border-2 border-teal-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
+
+/** Redirect logged-in users who land on /login or /signup to their dashboard */
+function GuestOnly({ children }: { children: ReactNode }) {
+  const { user, profile, loading } = useAuth();
+  if (loading) return <Spinner />;
+  if (user && profile) {
+    if (profile.role === "admin") return <Navigate to="/admin" replace />;
+    if (profile.role === "doctor") return <Navigate to="/doctor" replace />;
+    if (!profile.onboarding_completed) return <Navigate to="/onboarding/patient" replace />;
+    return <Navigate to="/dashboard" replace />;
+  }
+  return <>{children}</>;
+}
+
+/** Any authenticated user */
 function SessionGate({ children }: { children: ReactNode }) {
-  const { loading, user } = useAuth();
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-teal-800">Loading…</div>;
+  const { user, loading } = useAuth();
+  if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
 
+/** Authenticated patient who has completed onboarding */
 function PatientOnboardingGate({ children }: { children: ReactNode }) {
-  const { loading, profile, user } = useAuth();
-  if (loading || !user) return <div className="min-h-screen flex items-center justify-center text-teal-800">Loading…</div>;
-  if (profile?.role !== "patient") return <>{children}</>;
-  if (!profile.onboarding_completed) {
-    return <Navigate to="/onboarding/patient" replace />;
-  }
+  const { profile, loading } = useAuth();
+  if (loading) return <Spinner />;
+  if (profile?.role !== "patient") return <Navigate to="/login" replace />;
+  if (!profile.onboarding_completed) return <Navigate to="/onboarding/patient" replace />;
   return <>{children}</>;
 }
 
+/** Admin only */
 function AdminGate({ children }: { children: ReactNode }) {
-  const { loading, profile, user } = useAuth();
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-teal-800">Loading…</div>;
-  if (!user) return <Navigate to="/admin/login" replace />;
-  const admin = profile?.role === "admin" || isAdminEmail(user.email ?? "");
-  if (!admin) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center gap-4 bg-[#F2F4F7]">
-        <p className="text-teal-900 max-w-md">
-          This account is not an operations admin. Add your Google email to{" "}
-          <code className="bg-white/80 px-2 py-1 rounded">VITE_ADMIN_EMAILS</code> in{" "}
-          <code className="bg-white/80 px-2 py-1 rounded">.env</code>, sign out and sign in again, or set{" "}
-          <code className="bg-white/80 px-2 py-1 rounded">role = admin</code> on your row in Supabase{" "}
-          <code className="bg-white/80 px-2 py-1 rounded">profiles</code>.
-        </p>
-        <a className="text-teal-600 underline" href="/">
-          Back home
-        </a>
-      </div>
-    );
-  }
+  const { profile, loading } = useAuth();
+  if (loading) return <Spinner />;
+  if (profile?.role !== "admin") return <Navigate to="/admin/login" replace />;
   return <>{children}</>;
 }
 
+/** Doctor only */
 function DoctorGate({ children }: { children: ReactNode }) {
-  const { loading, profile, user } = useAuth();
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-teal-800">Loading…</div>;
-  if (!user) return <Navigate to="/login" replace />;
-  if (profile?.role !== "doctor") {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center gap-4">
-        <p className="text-teal-900 max-w-md">This area is for verified clinicians. Use the same Google email as your approved directory listing.</p>
-        <a className="text-teal-600 underline" href="/">
-          Home
-        </a>
-      </div>
-    );
-  }
+  const { profile, loading } = useAuth();
+  if (loading) return <Spinner />;
+  if (profile?.role !== "doctor") return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
 
@@ -77,9 +76,15 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
-      <Route path="/login" element={<PatientLogin />} />
-      <Route path="/signup" element={<PatientSignup />} />
-      <Route path="/admin/login" element={<AdminLogin />} />
+
+      {/* Guest-only auth pages */}
+      <Route path="/login" element={<GuestOnly><PatientLogin /></GuestOnly>} />
+      <Route path="/signup" element={<GuestOnly><PatientSignup /></GuestOnly>} />
+      <Route path="/forgot-password" element={<GuestOnly><ForgotPassword /></GuestOnly>} />
+      <Route path="/auth/reset-password" element={<ResetPassword />} />
+      <Route path="/admin/login" element={<GuestOnly><AdminLogin /></GuestOnly>} />
+
+      {/* Patient onboarding (logged in, not yet done) */}
       <Route
         path="/onboarding/patient"
         element={
@@ -88,6 +93,8 @@ export default function App() {
           </SessionGate>
         }
       />
+
+      {/* Patient dashboard + assessment */}
       <Route
         path="/dashboard"
         element={
@@ -108,9 +115,14 @@ export default function App() {
           </SessionGate>
         }
       />
+
+      {/* Public doctor pages */}
       <Route path="/apply" element={<DoctorApply />} />
+      <Route path="/doctors/:id" element={<DoctorProfile />} />
       <Route path="/doctor-signup" element={<Navigate to="/apply" replace />} />
       <Route path="/dr-neo" element={<Navigate to="/assessment" replace />} />
+
+      {/* Doctor dashboard */}
       <Route
         path="/doctor"
         element={
@@ -121,6 +133,8 @@ export default function App() {
           </SessionGate>
         }
       />
+
+      {/* Admin dashboard */}
       <Route
         path="/admin"
         element={
@@ -131,7 +145,8 @@ export default function App() {
           </SessionGate>
         }
       />
-      <Route path="*" element={<Navigate to="/" replace />} />
+
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }

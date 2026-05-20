@@ -494,7 +494,10 @@ export default function Landing() {
                     <p className="text-sm text-teal-800/70">{d.specialization}</p>
                     <p className="text-xs text-teal-900/55">{d.experience_years}+ yrs · {d.languages.join(", ")}</p>
                     <p className="text-sm font-bold text-teal-900">₹{d.consultation_fee} consultation</p>
-                    <Link to="/login" className="text-sm font-bold text-teal-600 hover:text-teal-800 transition">Book consultation →</Link>
+                    <div className="flex gap-3 pt-1">
+                      <Link to={`/doctors/${d.id}`} className="text-sm font-bold text-teal-600 hover:text-teal-800 transition">View profile →</Link>
+                      {d.calendly_url && <Link to={`/doctors/${d.id}`} className="text-sm font-semibold text-blue-600 hover:text-blue-800 transition">Book online</Link>}
+                    </div>
                   </div>
                 </motion.div>
               ))}
