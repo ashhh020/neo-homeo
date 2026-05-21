@@ -149,10 +149,19 @@ export default function Landing() {
         {/* ── HERO ── */}
         <section ref={heroRef} className="-mx-4 -mt-28 relative overflow-hidden min-h-[92vh] flex items-center">
 
-          {/* ── Background: sky gradient ── */}
-          <div className="absolute inset-0 bg-gradient-to-br from-sky-100 via-teal-50 to-cyan-100" />
+          {/* ── Background: matches site hero-gradient palette ── */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: "linear-gradient(135deg, #ecfdf5 0%, #f0fdfa 35%, #e0f2fe 65%, #eff6ff 100%)",
+            }}
+          />
+          {/* Soft teal orb top-left */}
+          <div className="absolute -top-20 -left-20 w-[480px] h-[480px] rounded-full bg-teal-200/40 blur-3xl pointer-events-none orb-drift" />
+          {/* Emerald orb bottom-center */}
+          <div className="absolute bottom-0 left-1/3 w-[360px] h-[360px] rounded-full bg-emerald-200/30 blur-3xl pointer-events-none orb-drift-reverse" />
 
-          {/* ── Doctor image — full-bleed background, right-aligned ── */}
+          {/* ── Doctor image — full-bleed, shifted 20% right ── */}
           <motion.div
             initial={{ opacity: 0, scale: 1.04 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -165,20 +174,36 @@ export default function Landing() {
               aria-hidden
               draggable={false}
               className="h-full w-auto max-w-none object-cover object-bottom"
-              style={{ maxHeight: "100%" }}
+              style={{ maxHeight: "100%", transform: "translateX(20%)" }}
             />
-            {/* Bottom fade */}
-            <div className="absolute bottom-0 inset-x-0 h-48 bg-gradient-to-t from-sky-100/95 via-sky-100/50 to-transparent pointer-events-none" />
-            {/* Left-side fade so text stays readable */}
-            <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-sky-100 via-sky-100/80 to-transparent pointer-events-none" />
+            {/* Bottom fade — site teal palette */}
+            <div
+              className="absolute bottom-0 inset-x-0 h-56 pointer-events-none"
+              style={{ background: "linear-gradient(to top, #ecfdf5 0%, rgba(236,253,245,0.6) 50%, transparent 100%)" }}
+            />
+            {/* Left fade — keeps text legible */}
+            <div
+              className="absolute inset-y-0 left-0 w-[55%] pointer-events-none"
+              style={{ background: "linear-gradient(to right, #f0fdfa 30%, rgba(240,253,250,0.85) 60%, transparent 100%)" }}
+            />
           </motion.div>
 
-          {/* ── Watermark ── */}
-          <div className="absolute bottom-0 inset-x-0 flex justify-center opacity-[0.04] select-none pointer-events-none overflow-hidden">
-            <span className="text-[180px] md:text-[240px] font-black text-teal-900 leading-none tracking-tight">NeoHomeo</span>
+          {/* ── NeoHomeo highlight watermark ── */}
+          <div className="absolute bottom-0 inset-x-0 flex justify-center select-none pointer-events-none overflow-hidden">
+            <span
+              className="text-[160px] md:text-[220px] font-black leading-none tracking-tight"
+              style={{
+                background: "linear-gradient(135deg, rgba(13,148,136,0.18) 0%, rgba(6,182,212,0.12) 40%, rgba(139,92,246,0.08) 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
+            >
+              NeoHomeo
+            </span>
           </div>
 
-          {/* ── Content: left column only ── */}
+          {/* ── Content ── */}
           <motion.div
             style={{ y: heroY, opacity: heroOpacity }}
             className="relative w-full max-w-6xl mx-auto px-4 pt-36 pb-28"
@@ -187,7 +212,7 @@ export default function Landing() {
 
               <motion.span
                 initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }}
-                className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.3em] text-teal-700 bg-white/80 border border-teal-200/60 px-4 py-2 rounded-full shadow-sm"
+                className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.3em] text-teal-700 bg-white/70 border border-teal-200/70 px-4 py-2 rounded-full shadow-sm backdrop-blur-sm"
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
                 AI-Powered Homeopathy
@@ -209,7 +234,7 @@ export default function Landing() {
 
               <motion.p
                 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.38 }}
-                className="text-base md:text-lg text-teal-900/70 leading-relaxed"
+                className="text-base md:text-lg text-teal-900/65 leading-relaxed"
               >
                 Connect with certified homeopathic doctors through AI-assisted consultations, manage your health records, and receive personalized remedies — all from the comfort of your home.
               </motion.p>
@@ -219,12 +244,12 @@ export default function Landing() {
                 className="flex flex-wrap gap-3"
               >
                 <Link to="/assessment"
-                  className="inline-flex items-center gap-2 bg-teal-950 hover:bg-teal-900 text-white px-8 py-4 rounded-full text-base font-bold shadow-xl transition"
+                  className="inline-flex items-center gap-2 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white px-8 py-4 rounded-full text-base font-bold shadow-xl shadow-teal-500/25 transition"
                 >
                   Start Consultation
                 </Link>
                 <Link to="/apply"
-                  className="inline-flex items-center gap-2 bg-white/80 hover:bg-white border border-teal-200 text-teal-950 px-8 py-4 rounded-full text-base font-bold shadow-sm transition"
+                  className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm hover:bg-white border border-teal-200 text-teal-950 px-8 py-4 rounded-full text-base font-bold shadow-sm transition"
                 >
                   For Doctors
                 </Link>
