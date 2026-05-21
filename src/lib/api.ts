@@ -467,7 +467,31 @@ export async function bookAppointment(input: {
     .select("id")
     .single();
   if (error) throw error;
-  return data.id as string;
+  const apptId = data.id as string;
+
+  // Notify the doctor (best-effort — don't block booking if this fails)
+  void (async () => {
+    const { data: doc } = await sb
+      .from("doctors")
+      .select("profile_id, full_name")
+      .eq("id", input.doctorId)
+      .maybeSingle();
+    const { data: patient } = await sb
+      .from("profiles")
+      .select("full_name")
+      .eq("id", input.patientId)
+      .maybeSingle();
+    if (doc?.profile_id) {
+      await createNotification({
+        userId: doc.profile_id,
+        title: "📅 New appointment request",
+        body: `${patient?.full_name ?? "A patient"} has requested an appointment with you.`,
+        link: "/doctor",
+      });
+    }
+  })().catch(() => {});
+
+  return apptId;
 }
 
 export async function listPatientAppointments(patientId: string): Promise<AppointmentRow[]> {
@@ -507,6 +531,27 @@ export async function updateAppointmentStatus(
     .update({ status, ...(notes !== undefined ? { notes } : {}) })
     .eq("id", id);
   if (error) throw error;
+
+  // Notify patient of status change (best-effort)
+  void (async () => {
+    const { data: appt } = await sb
+      .from("appointments")
+      .select("patient_id, doctor:doctors!doctor_id(full_name)")
+      .eq("id", id)
+      .maybeSingle();
+    if (!appt?.patient_id) return;
+    const doctorName = (appt.doctor as { full_name?: string } | null)?.full_name ?? "Your doctor";
+    const msgs: Record<AppointmentStatus, { title: string; body: string }> = {
+      confirmed:  { title: "✅ Appointment confirmed", body: `${doctorName} confirmed your appointment.` },
+      cancelled:  { title: "❌ Appointment cancelled", body: `Your appointment with ${doctorName} was cancelled.` },
+      completed:  { title: "🎉 Appointment completed", body: `Your appointment with ${doctorName} is complete. Leave a review!` },
+      pending:    { title: "📋 Appointment updated", body: `Your appointment status changed to pending.` },
+    };
+    const msg = msgs[status];
+    if (msg) {
+      await createNotification({ userId: appt.patient_id, ...msg, link: "/dashboard" });
+    }
+  })().catch(() => {});
 }
 
 export async function listAllAppointments(): Promise<AppointmentRow[]> {
