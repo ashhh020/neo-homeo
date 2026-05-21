@@ -244,7 +244,7 @@ export default function AdminDashboard() {
   const applyUrl = useMemo(() => `${window.location.origin}/apply`, []);
 
   async function refresh() {
-    const [a, d, s, p, appts, assess] = await Promise.all([
+    const [a, d, s, p, appts, assess] = await Promise.allSettled([
       listPendingDoctorApplications(),
       listApprovedDoctors(),
       getDashboardStats(),
@@ -252,12 +252,16 @@ export default function AdminDashboard() {
       listAllAppointments(),
       listAllAssessmentsAdmin(),
     ]);
-    setApps(a);
-    setDoctors(d);
-    setStats(s);
-    setPatients(p);
-    setAllAppointments(appts);
-    setAllAssessments(assess);
+    if (a.status === "fulfilled") setApps(a.value);
+    if (d.status === "fulfilled") setDoctors(d.value);
+    if (s.status === "fulfilled") setStats(s.value);
+    if (p.status === "fulfilled") setPatients(p.value);
+    if (appts.status === "fulfilled") setAllAppointments(appts.value);
+    if (assess.status === "fulfilled") setAllAssessments(assess.value);
+    // Log any failures so they show in browser console for debugging
+    [a, d, s, p, appts, assess].forEach((r, i) => {
+      if (r.status === "rejected") console.error(`Admin load[${i}] failed:`, r.reason);
+    });
   }
 
   useEffect(() => { void refresh(); }, []);
