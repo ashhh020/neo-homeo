@@ -1,21 +1,25 @@
-import type { ReactNode } from "react";
+import { lazy, Suspense, type ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
+import { useAuth } from "./context/AuthContext";
+
+// Eagerly load tiny/auth pages
 import Landing from "./pages/Landing";
 import PatientLogin from "./pages/PatientLogin";
 import PatientSignup from "./pages/PatientSignup";
-import PatientDashboard from "./pages/PatientDashboard";
-import PatientOnboarding from "./pages/PatientOnboarding";
-import DoctorApply from "./pages/DoctorApply";
 import AdminLogin from "./pages/AdminLogin";
-import AdminDashboard from "./pages/AdminDashboard";
-import DrNeo from "./pages/DrNeo";
 import AuthCallback from "./pages/AuthCallback";
-import DoctorDashboard from "./pages/DoctorDashboard";
-import DoctorProfile from "./pages/DoctorProfile";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
-import { useAuth } from "./context/AuthContext";
+
+// Lazy load heavy pages
+const PatientDashboard  = lazy(() => import("./pages/PatientDashboard"));
+const PatientOnboarding = lazy(() => import("./pages/PatientOnboarding"));
+const DoctorApply       = lazy(() => import("./pages/DoctorApply"));
+const AdminDashboard    = lazy(() => import("./pages/AdminDashboard"));
+const DrNeo             = lazy(() => import("./pages/DrNeo"));
+const DoctorDashboard   = lazy(() => import("./pages/DoctorDashboard"));
+const DoctorProfile     = lazy(() => import("./pages/DoctorProfile"));
 
 function Spinner() {
   return (
@@ -23,6 +27,10 @@ function Spinner() {
       <div className="w-10 h-10 border-2 border-teal-500 border-t-transparent rounded-full animate-spin" />
     </div>
   );
+}
+
+function LazyBoundary({ children }: { children: ReactNode }) {
+  return <Suspense fallback={<Spinner />}>{children}</Suspense>;
 }
 
 /** Redirect logged-in users who land on /login or /signup to their dashboard */
@@ -84,12 +92,12 @@ export default function App() {
       <Route path="/auth/reset-password" element={<ResetPassword />} />
       <Route path="/admin/login" element={<GuestOnly><AdminLogin /></GuestOnly>} />
 
-      {/* Patient onboarding (logged in, not yet done) */}
+      {/* Patient onboarding */}
       <Route
         path="/onboarding/patient"
         element={
           <SessionGate>
-            <PatientOnboarding />
+            <LazyBoundary><PatientOnboarding /></LazyBoundary>
           </SessionGate>
         }
       />
@@ -100,7 +108,7 @@ export default function App() {
         element={
           <SessionGate>
             <PatientOnboardingGate>
-              <PatientDashboard />
+              <LazyBoundary><PatientDashboard /></LazyBoundary>
             </PatientOnboardingGate>
           </SessionGate>
         }
@@ -110,15 +118,15 @@ export default function App() {
         element={
           <SessionGate>
             <PatientOnboardingGate>
-              <DrNeo />
+              <LazyBoundary><DrNeo /></LazyBoundary>
             </PatientOnboardingGate>
           </SessionGate>
         }
       />
 
       {/* Public doctor pages */}
-      <Route path="/apply" element={<DoctorApply />} />
-      <Route path="/doctors/:id" element={<DoctorProfile />} />
+      <Route path="/apply" element={<LazyBoundary><DoctorApply /></LazyBoundary>} />
+      <Route path="/doctors/:id" element={<LazyBoundary><DoctorProfile /></LazyBoundary>} />
       <Route path="/doctor-signup" element={<Navigate to="/apply" replace />} />
       <Route path="/dr-neo" element={<Navigate to="/assessment" replace />} />
 
@@ -128,7 +136,7 @@ export default function App() {
         element={
           <SessionGate>
             <DoctorGate>
-              <DoctorDashboard />
+              <LazyBoundary><DoctorDashboard /></LazyBoundary>
             </DoctorGate>
           </SessionGate>
         }
@@ -140,7 +148,7 @@ export default function App() {
         element={
           <SessionGate>
             <AdminGate>
-              <AdminDashboard />
+              <LazyBoundary><AdminDashboard /></LazyBoundary>
             </AdminGate>
           </SessionGate>
         }

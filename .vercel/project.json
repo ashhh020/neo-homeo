@@ -1,0 +1,16 @@
+{
+  "projectId": "prj_1vCqi8JUb7d7hMXCKcu500NG0PuW",
+  "orgId": "team_Ca8B2PQ0QykCXJC7kDME14u0",
+  "projectName": "neohomeo",
+  "settings": {
+    "createdAt": 1778892570501,
+    "framework": "nextjs",
+    "devCommand": null,
+    "installCommand": null,
+    "buildCommand": null,
+    "outputDirectory": null,
+    "rootDirectory": "neohomeo",
+    "directoryListing": false,
+    "nodeVersion": "24.x"
+  }
+}

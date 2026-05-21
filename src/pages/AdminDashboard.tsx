@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { NeoLogo } from "../components/Shell";
 import { useAuth } from "../context/AuthContext";
 import {
+  adminUpdateDoctor,
   getDashboardStats,
   listAllAppointments,
   listAllAssessmentsAdmin,
@@ -11,6 +12,7 @@ import {
   listApprovedDoctors,
   listPendingDoctorApplications,
   notifyDoctorOfDecision,
+  removeDoctor,
   setDoctorApplicationStatus,
   updateUserRole,
   type AppointmentRow,
@@ -79,12 +81,14 @@ function AppRow({
   note,
   onNote,
   onDecide,
+  onDelete,
 }: {
   app: DoctorRow;
   busy: boolean;
   note: string;
   onNote: (v: string) => void;
   onDecide: (status: "approved" | "rejected") => void;
+  onDelete: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -196,6 +200,15 @@ function AppRow({
                   Previous note: {app.admin_note}
                 </p>
               )}
+              <div className="border-t border-teal-50 pt-3">
+                <button
+                  disabled={busy}
+                  onClick={() => onDelete()}
+                  className="text-xs font-semibold text-rose-600 hover:text-rose-800 underline disabled:opacity-50"
+                >
+                  Permanently delete this application
+                </button>
+              </div>
             </div>
           </motion.div>
         )}
@@ -219,6 +232,14 @@ export default function AdminDashboard() {
   const [toast, setToast] = useState<{ msg: string; kind: "success" | "error" } | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchQ, setSearchQ] = useState("");
+  const [editingDoc, setEditingDoc] = useState<DoctorRow | null>(null);
+  const [editForm, setEditForm] = useState<{
+    bio: string; clinic_name: string; clinic_address: string;
+    consultation_fee: string; languages: string; specialization: string;
+    experience_years: string; calendly_url: string; match_keywords: string;
+  }>({ bio: "", clinic_name: "", clinic_address: "", consultation_fee: "",
+       languages: "", specialization: "", experience_years: "", calendly_url: "", match_keywords: "" });
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const applyUrl = useMemo(() => `${window.location.origin}/apply`, []);
 
@@ -304,6 +325,63 @@ export default function AdminDashboard() {
       showToast(e instanceof Error ? e.message : "Failed to update role", "error");
     } finally {
       setBusyId(null);
+    }
+  }
+
+  async function deleteDoctor(id: string, name: string) {
+    if (!window.confirm(`Remove ${name} from NeoHomeo? This cannot be undone.`)) return;
+    setBusyId(id);
+    try {
+      await removeDoctor(id);
+      setDoctors((prev) => prev.filter((d) => d.id !== id));
+      setApps((prev) => prev.filter((a) => a.id !== id));
+      await refresh();
+      showToast(`${name} has been removed.`);
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "Could not remove doctor", "error");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  function openEdit(d: DoctorRow) {
+    setEditingDoc(d);
+    setEditForm({
+      bio: d.bio ?? "",
+      clinic_name: d.clinic_name ?? "",
+      clinic_address: d.clinic_address ?? "",
+      consultation_fee: String(d.consultation_fee),
+      languages: (d.languages ?? []).join(", "),
+      specialization: d.specialization,
+      experience_years: String(d.experience_years),
+      calendly_url: d.calendly_url ?? "",
+      match_keywords: d.match_keywords ?? "",
+    });
+  }
+
+  async function saveEdit() {
+    if (!editingDoc) return;
+    setSavingEdit(true);
+    try {
+      const updates = {
+        bio: editForm.bio.trim() || null,
+        clinic_name: editForm.clinic_name.trim() || null,
+        clinic_address: editForm.clinic_address.trim() || null,
+        consultation_fee: Number(editForm.consultation_fee) || editingDoc.consultation_fee,
+        languages: editForm.languages.split(",").map((l) => l.trim()).filter(Boolean),
+        specialization: editForm.specialization.trim() || editingDoc.specialization,
+        experience_years: Number(editForm.experience_years) || editingDoc.experience_years,
+        calendly_url: editForm.calendly_url.trim() || null,
+        match_keywords: editForm.match_keywords.trim() || null,
+      };
+      await adminUpdateDoctor(editingDoc.id, updates);
+      setDoctors((prev) => prev.map((d) => d.id === editingDoc.id ? { ...d, ...updates } as DoctorRow : d));
+      showToast("Doctor profile updated!");
+      setEditingDoc(null);
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "Could not save", "error");
+    } finally {
+      setSavingEdit(false);
     }
   }
 
@@ -504,6 +582,7 @@ export default function AdminDashboard() {
                       note={notes[app.id] ?? ""}
                       onNote={(v) => setNotes((n) => ({ ...n, [app.id]: v }))}
                       onDecide={(status) => void decide(app.id, status)}
+                      onDelete={() => void deleteDoctor(app.id, app.full_name)}
                     />
                   ))
                 )}
@@ -552,9 +631,22 @@ export default function AdminDashboard() {
                           <p className="text-sm text-teal-800/70">{d.specialization}</p>
                           <p className="text-xs text-teal-900/55">{d.experience_years}+ yrs · {d.languages.join(", ")}</p>
                           <p className="text-sm font-semibold text-teal-900">₹{d.consultation_fee}</p>
-                          <div className="flex gap-2 flex-wrap">
+                          <div className="flex gap-2 flex-wrap items-center">
                             <span className={`text-[10px] px-2 py-0.5 rounded-full border font-semibold ${STATUS_COLORS.approved}`}>live</span>
                             {d.calendly_url && <span className="text-[10px] px-2 py-0.5 rounded-full border font-semibold bg-blue-50 text-blue-700 border-blue-100">Calendly ✓</span>}
+                            <button
+                              onClick={() => openEdit(d)}
+                              className="text-[10px] px-2 py-0.5 rounded-full border font-semibold bg-teal-50 text-teal-700 border-teal-200 hover:bg-teal-100 transition"
+                            >
+                              ✎ Edit
+                            </button>
+                            <button
+                              disabled={busyId === d.id}
+                              onClick={() => void deleteDoctor(d.id, d.full_name)}
+                              className="text-[10px] px-2 py-0.5 rounded-full border font-semibold bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 disabled:opacity-50 transition"
+                            >
+                              {busyId === d.id ? "Removing…" : "✕ Remove"}
+                            </button>
                           </div>
                         </div>
                       </motion.div>
@@ -795,6 +887,82 @@ export default function AdminDashboard() {
           </AnimatePresence>
         </main>
       </div>
+
+      {/* ── Edit Doctor Modal ── */}
+      <AnimatePresence>
+        {editingDoc && (
+          <motion.div
+            key="edit-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+            onClick={(e) => { if (e.target === e.currentTarget) setEditingDoc(null); }}
+          >
+            <motion.div
+              initial={{ scale: 0.94, opacity: 0, y: 16 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.96, opacity: 0 }}
+              className="bg-white rounded-3xl shadow-2xl border border-teal-50 w-full max-w-xl max-h-[90vh] overflow-y-auto"
+            >
+              <div className="p-6 space-y-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold text-teal-950">Edit doctor profile</h2>
+                    <p className="text-xs text-teal-800/55">{editingDoc.full_name}</p>
+                  </div>
+                  <button onClick={() => setEditingDoc(null)} className="w-8 h-8 rounded-full bg-teal-50 text-teal-700 text-lg hover:bg-teal-100 transition flex items-center justify-center">✕</button>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4 text-sm">
+                  {([
+                    { label: "Specialization", key: "specialization", type: "text" },
+                    { label: "Experience (years)", key: "experience_years", type: "number" },
+                    { label: "Clinic name", key: "clinic_name", type: "text" },
+                    { label: "Consultation fee (₹)", key: "consultation_fee", type: "number" },
+                    { label: "Clinic address", key: "clinic_address", type: "text", span: true },
+                    { label: "Languages (comma-separated)", key: "languages", type: "text", span: true },
+                    { label: "Calendly URL", key: "calendly_url", type: "text", span: true },
+                    { label: "Match keywords", key: "match_keywords", type: "text", span: true },
+                  ] as { label: string; key: keyof typeof editForm; type: string; span?: boolean }[]).map(({ label, key, type, span }) => (
+                    <label key={key} className={`block font-medium text-teal-900 ${span ? "md:col-span-2" : ""}`}>
+                      {label}
+                      <input
+                        type={type}
+                        value={editForm[key]}
+                        onChange={(e) => setEditForm((f) => ({ ...f, [key]: e.target.value }))}
+                        className="mt-1 w-full rounded-2xl border border-teal-100 bg-teal-50/40 px-3 py-2 text-sm font-normal"
+                      />
+                    </label>
+                  ))}
+                  <label className="block font-medium text-teal-900 md:col-span-2">
+                    Bio
+                    <textarea rows={3} value={editForm.bio}
+                      onChange={(e) => setEditForm((f) => ({ ...f, bio: e.target.value }))}
+                      className="mt-1 w-full rounded-2xl border border-teal-100 bg-teal-50/40 px-3 py-2 text-sm font-normal" />
+                  </label>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => void saveEdit()}
+                    disabled={savingEdit}
+                    className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-teal-500 to-emerald-500 text-white font-bold text-sm disabled:opacity-50 shadow"
+                  >
+                    {savingEdit ? "Saving…" : "Save changes"}
+                  </button>
+                  <button
+                    onClick={() => setEditingDoc(null)}
+                    className="px-5 py-3 rounded-2xl border border-teal-100 text-teal-700 font-semibold text-sm hover:bg-teal-50 transition"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* toast */}
       <AnimatePresence>

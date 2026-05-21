@@ -142,23 +142,33 @@ create policy "doctors_insert_pending" on public.doctors
 for insert with check (status = 'pending');
 
 -- Admins can do anything on doctors
+create or replace function public.is_admin()
+returns boolean
+language sql
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.profiles
+    where id = auth.uid() and role = 'admin'
+  );
+$$;
+
 create policy "doctors_admin_all" on public.doctors
-for all using (
-  exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin')
-);
+for all using (public.is_admin());
 
 -- Admins read all profiles / patient_details / assessments
 create policy "profiles_admin_select" on public.profiles
-for select using (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'));
+for select using (public.is_admin());
 
 create policy "profiles_admin_update" on public.profiles
-for update using (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'));
+for update using (public.is_admin());
 
 create policy "patient_details_admin_select" on public.patient_details
-for select using (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'));
+for select using (public.is_admin());
 
 create policy "assessments_admin_select" on public.assessments
-for select using (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'));
+for select using (public.is_admin());
 
 -- Assessments: patient owns
 create policy "assessments_select_own" on public.assessments
@@ -174,7 +184,7 @@ create policy "appointments_patient" on public.appointments
 for all using (auth.uid() = patient_id) with check (auth.uid() = patient_id);
 
 create policy "appointments_admin" on public.appointments
-for all using (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'));
+for all using (public.is_admin());
 
 -- Storage bucket (create in Dashboard → Storage → new bucket "doctor-docs" as public or authenticated)
 -- Policies must be added in Supabase UI for storage.objects

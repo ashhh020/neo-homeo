@@ -10,6 +10,7 @@ import {
   listDoctorAppointments,
   updateAppointmentStatus,
   updateDoctorProfile,
+  uploadDoctorPhoto,
   type AppointmentRow,
   type AppointmentStatus,
   type DoctorRow,
@@ -38,6 +39,7 @@ export default function DoctorDashboard() {
   const [appointments, setAppointments] = useState<AppointmentRow[]>([]);
   const [loadingAppts, setLoadingAppts] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   // Editable fields
   const [bio, setBio] = useState("");
@@ -126,6 +128,22 @@ export default function DoctorDashboard() {
     }
   }
 
+  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !doc) return;
+    if (file.size > 5 * 1024 * 1024) { toast("Photo must be under 5 MB", "error"); return; }
+    setUploadingPhoto(true);
+    try {
+      const url = await uploadDoctorPhoto(doc.id, file);
+      setDoc({ ...doc, photo_url: url });
+      toast("Profile photo updated!");
+    } catch {
+      toast("Could not upload photo", "error");
+    } finally {
+      setUploadingPhoto(false);
+    }
+  }
+
   if (loading) {
     return (
       <PageShell>
@@ -192,8 +210,15 @@ export default function DoctorDashboard() {
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
           className="rounded-[2rem] border border-white/70 bg-gradient-to-br from-white/80 via-teal-50/40 to-white/60 backdrop-blur-xl p-8 shadow-xl">
           <div className="flex flex-col sm:flex-row gap-6 items-start">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-100 to-cyan-100 border border-teal-50 flex items-center justify-center text-2xl font-bold text-teal-700 flex-shrink-0">
-              {doc.full_name.slice(0, 1)}
+            <div className="relative flex-shrink-0">
+              {doc.photo_url ? (
+                <img src={doc.photo_url} alt={doc.full_name}
+                  className="w-16 h-16 rounded-2xl object-cover border border-teal-100 shadow" />
+              ) : (
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-100 to-cyan-100 border border-teal-50 flex items-center justify-center text-2xl font-bold text-teal-700">
+                  {doc.full_name.slice(0, 1)}
+                </div>
+              )}
             </div>
             <div className="flex-1 space-y-1">
               <h1 className="text-2xl font-semibold text-teal-950">{doc.full_name}</h1>
@@ -323,6 +348,28 @@ export default function DoctorDashboard() {
         {tab === "profile" && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-6 space-y-5">
             <h2 className="text-lg font-semibold text-teal-950">Edit your practice profile</h2>
+
+            {/* Photo upload */}
+            <div className="flex items-center gap-4 p-4 bg-teal-50/60 rounded-2xl border border-teal-100">
+              {doc.photo_url ? (
+                <img src={doc.photo_url} alt="Profile" className="w-16 h-16 rounded-2xl object-cover border border-teal-200 shadow" />
+              ) : (
+                <div className="w-16 h-16 rounded-2xl bg-teal-100 flex items-center justify-center text-2xl font-bold text-teal-700">
+                  {doc.full_name.slice(0, 1)}
+                </div>
+              )}
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-teal-900">Profile photo</p>
+                <p className="text-xs text-teal-800/60">JPG, PNG or WebP · max 5 MB</p>
+                <label className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition
+                  ${uploadingPhoto ? "opacity-50 cursor-not-allowed bg-teal-100 text-teal-600" : "bg-teal-600 hover:bg-teal-700 text-white"}`}>
+                  {uploadingPhoto ? "Uploading…" : doc.photo_url ? "Change photo" : "Upload photo"}
+                  <input type="file" accept="image/*" className="sr-only" disabled={uploadingPhoto}
+                    onChange={(e) => void handlePhotoUpload(e)} />
+                </label>
+              </div>
+            </div>
+
             <div className="grid md:grid-cols-2 gap-4">
               <label className="block text-sm font-medium text-teal-900">
                 Clinic name

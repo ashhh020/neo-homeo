@@ -196,6 +196,15 @@ export async function setDoctorApplicationStatus(
   if (error) throw error;
 }
 
+export async function removeDoctor(id: string): Promise<void> {
+  if (!isSupabaseConfigured()) throw new Error("Supabase required");
+  const sb = getSupabase();
+  // Reset profile_id link first (so the profile doesn't get cascade-deleted)
+  await sb.from("doctors").update({ profile_id: null, status: "rejected" }).eq("id", id);
+  const { error } = await sb.from("doctors").delete().eq("id", id);
+  if (error) throw error;
+}
+
 export async function submitDoctorApplication(input: {
   fullName: string;
   qualification: string;
@@ -330,7 +339,33 @@ export async function updateDoctorCalendly(doctorId: string, calendlyUrl: string
   if (error) throw error;
 }
 
-export async function updateDoctorProfile(doctorId: string, updates: Partial<Pick<DoctorRow, "bio" | "clinic_name" | "clinic_address" | "consultation_fee" | "languages" | "calendly_url" | "match_keywords">>) {
+export async function updateDoctorProfile(doctorId: string, updates: Partial<Pick<DoctorRow, "bio" | "clinic_name" | "clinic_address" | "consultation_fee" | "languages" | "calendly_url" | "match_keywords" | "photo_url">>) {
+  if (!isSupabaseConfigured()) throw new Error("Supabase required");
+  const sb = getSupabase();
+  const { error } = await sb.from("doctors").update(updates).eq("id", doctorId);
+  if (error) throw error;
+}
+
+/** Upload a doctor profile photo and update photo_url on their record */
+export async function uploadDoctorPhoto(doctorId: string, file: File): Promise<string> {
+  if (!isSupabaseConfigured()) throw new Error("Supabase required");
+  const sb = getSupabase();
+  const ext = file.name.split(".").pop() ?? "jpg";
+  const path = `photos/${doctorId}.${ext}`;
+  const { error: upErr } = await sb.storage.from("doctor-docs").upload(path, file, { upsert: true, contentType: file.type });
+  if (upErr) throw upErr;
+  const { data } = sb.storage.from("doctor-docs").getPublicUrl(path);
+  const url = data.publicUrl;
+  const { error: dbErr } = await sb.from("doctors").update({ photo_url: url }).eq("id", doctorId);
+  if (dbErr) throw dbErr;
+  return url;
+}
+
+/** Admin-only: update any editable field on a doctor record */
+export async function adminUpdateDoctor(
+  doctorId: string,
+  updates: Partial<Pick<DoctorRow, "bio" | "clinic_name" | "clinic_address" | "consultation_fee" | "languages" | "calendly_url" | "match_keywords" | "photo_url" | "specialization" | "experience_years">>
+): Promise<void> {
   if (!isSupabaseConfigured()) throw new Error("Supabase required");
   const sb = getSupabase();
   const { error } = await sb.from("doctors").update(updates).eq("id", doctorId);
