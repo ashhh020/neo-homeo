@@ -147,21 +147,44 @@ export default function Landing() {
       <main className="pt-28 pb-24 px-4 max-w-6xl mx-auto space-y-28">
 
         {/* ── HERO ── */}
-        <section ref={heroRef} className="-mx-4 -mt-28 relative overflow-hidden">
-          {/* Background */}
+        <section ref={heroRef} className="-mx-4 -mt-28 relative overflow-hidden min-h-[92vh] flex items-center">
+
+          {/* ── Background: sky gradient ── */}
           <div className="absolute inset-0 bg-gradient-to-br from-sky-100 via-teal-50 to-cyan-100" />
-          {/* Orbs */}
-          <div className="absolute top-10 right-0 w-[500px] h-[500px] rounded-full bg-teal-300/25 blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-cyan-300/20 blur-3xl pointer-events-none" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-emerald-200/10 blur-3xl pointer-events-none" />
-          {/* Watermark */}
-          <div className="absolute inset-0 flex items-end justify-center opacity-[0.04] select-none pointer-events-none overflow-hidden pb-0">
-            <span className="text-[180px] md:text-[260px] font-black text-teal-900 leading-none tracking-tight">NeoHomeo</span>
+
+          {/* ── Doctor image — full-bleed background, right-aligned ── */}
+          <motion.div
+            initial={{ opacity: 0, scale: 1.04 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute inset-0 flex items-end justify-end pointer-events-none select-none"
+          >
+            <img
+              src="/hero-doctors.png"
+              alt=""
+              aria-hidden
+              draggable={false}
+              className="h-full w-auto max-w-none object-cover object-bottom"
+              style={{ maxHeight: "100%" }}
+            />
+            {/* Bottom fade */}
+            <div className="absolute bottom-0 inset-x-0 h-48 bg-gradient-to-t from-sky-100/95 via-sky-100/50 to-transparent pointer-events-none" />
+            {/* Left-side fade so text stays readable */}
+            <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-sky-100 via-sky-100/80 to-transparent pointer-events-none" />
+          </motion.div>
+
+          {/* ── Watermark ── */}
+          <div className="absolute bottom-0 inset-x-0 flex justify-center opacity-[0.04] select-none pointer-events-none overflow-hidden">
+            <span className="text-[180px] md:text-[240px] font-black text-teal-900 leading-none tracking-tight">NeoHomeo</span>
           </div>
 
-          <motion.div style={{ y: heroY, opacity: heroOpacity }} className="relative max-w-6xl mx-auto px-4 pt-36 pb-20 grid lg:grid-cols-2 gap-10 items-center">
-            {/* ── Left column ── */}
-            <div className="space-y-8">
+          {/* ── Content: left column only ── */}
+          <motion.div
+            style={{ y: heroY, opacity: heroOpacity }}
+            className="relative w-full max-w-6xl mx-auto px-4 pt-36 pb-28"
+          >
+            <div className="max-w-xl space-y-8">
+
               <motion.span
                 initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }}
                 className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.3em] text-teal-700 bg-white/80 border border-teal-200/60 px-4 py-2 rounded-full shadow-sm"
@@ -170,17 +193,14 @@ export default function Landing() {
                 AI-Powered Homeopathy
               </motion.span>
 
-              <motion.h1
-                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.65, delay: 0.08 }}
-                className="space-y-0 leading-[1.05]"
-              >
+              <motion.h1 className="space-y-0 leading-[1.05]">
                 {["Homeopathic.", "Anywhere.", "Anytime."].map((word, i) => (
                   <motion.span
                     key={word}
-                    initial={{ opacity: 0, x: -20 }}
+                    initial={{ opacity: 0, x: -24 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.5, delay: 0.1 + i * 0.1 }}
-                    className="block text-5xl md:text-[64px] font-black text-teal-950 tracking-tight"
+                    transition={{ duration: 0.55, delay: 0.08 + i * 0.1 }}
+                    className="block text-5xl md:text-[68px] font-black text-teal-950 tracking-tight"
                   >
                     {word}
                   </motion.span>
@@ -188,14 +208,14 @@ export default function Landing() {
               </motion.h1>
 
               <motion.p
-                initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.35 }}
-                className="text-base md:text-lg text-teal-900/65 max-w-md leading-relaxed"
+                initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.38 }}
+                className="text-base md:text-lg text-teal-900/70 leading-relaxed"
               >
                 Connect with certified homeopathic doctors through AI-assisted consultations, manage your health records, and receive personalized remedies — all from the comfort of your home.
               </motion.p>
 
               <motion.div
-                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.45 }}
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.5 }}
                 className="flex flex-wrap gap-3"
               >
                 <Link to="/assessment"
@@ -210,79 +230,7 @@ export default function Landing() {
                 </Link>
               </motion.div>
 
-              {/* Floating stat badges */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.6 }}
-                className="flex flex-wrap gap-4"
-              >
-                {[
-                  { icon: "👨‍⚕️", num: "500+", label: "Verified Doctors" },
-                  { icon: "🏥", num: "10,000+", label: "Patients Served" },
-                  { icon: "⭐", num: "4.9", label: "Avg. Rating" },
-                ].map((s) => (
-                  <motion.div
-                    key={s.label}
-                    whileHover={{ y: -3, boxShadow: "0 16px 32px rgba(13,148,136,0.18)" }}
-                    className="flex items-center gap-3 bg-white/90 backdrop-blur border border-white rounded-2xl px-4 py-3 shadow-lg"
-                  >
-                    <span className="text-2xl">{s.icon}</span>
-                    <div>
-                      <p className="text-sm font-black text-teal-950 leading-none">{s.num}</p>
-                      <p className="text-[10px] text-teal-800/55 mt-0.5 font-semibold">{s.label}</p>
-                    </div>
-                  </motion.div>
-                ))}
-              </motion.div>
             </div>
-
-            {/* ── Right column — doctor image ── */}
-            <motion.div
-              initial={{ opacity: 0, x: 30, y: 10 }}
-              animate={{ opacity: 1, x: 0, y: 0 }}
-              transition={{ duration: 0.85, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-              className="relative flex justify-center lg:justify-end"
-            >
-              {/* Soft glow behind image */}
-              <div className="absolute inset-0 bg-gradient-to-b from-teal-300/20 via-cyan-200/10 to-transparent blur-2xl rounded-full pointer-events-none" />
-
-              {/* Doctor image — fills right column naturally */}
-              <div className="relative w-full max-w-lg">
-                <img
-                  src="/hero-doctors.png"
-                  alt="Certified homeopathic doctors"
-                  className="w-full h-auto object-contain drop-shadow-2xl select-none"
-                  draggable={false}
-                />
-
-                {/* Floating badge — top right corner of image */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.75, y: -10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ delay: 0.9, type: "spring", stiffness: 260, damping: 20 }}
-                  className="absolute top-8 -right-4 md:right-0 z-10 flex items-center gap-3 bg-white/95 backdrop-blur-sm rounded-2xl px-4 py-3 shadow-2xl border border-white"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center text-xl flex-shrink-0">🩺</div>
-                  <div>
-                    <p className="text-sm font-black text-teal-950 leading-none">10,000+</p>
-                    <p className="text-[11px] text-teal-800/55 font-semibold mt-0.5">Patients Served</p>
-                  </div>
-                </motion.div>
-
-                {/* Floating badge — bottom left corner of image */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.75, y: 10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ delay: 1.1, type: "spring", stiffness: 260, damping: 20 }}
-                  className="absolute bottom-16 -left-4 md:left-0 z-10 flex items-center gap-3 bg-white/95 backdrop-blur-sm rounded-2xl px-4 py-3 shadow-2xl border border-white"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-xl flex-shrink-0">👨‍⚕️</div>
-                  <div>
-                    <p className="text-sm font-black text-teal-950 leading-none">500+</p>
-                    <p className="text-[11px] text-teal-800/55 font-semibold mt-0.5">Verified Doctors</p>
-                  </div>
-                </motion.div>
-              </div>
-            </motion.div>
           </motion.div>
         </section>
 
