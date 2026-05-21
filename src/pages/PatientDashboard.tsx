@@ -455,16 +455,18 @@ export default function PatientDashboard() {
                       )}
                     </div>
                     <div className="flex flex-col gap-2 items-end">
-                      <Link
-                        to={`/doctors/${appt.doctor_id}`}
-                        className="text-xs font-semibold text-teal-600 hover:text-teal-800"
-                      >
-                        View doctor →
-                      </Link>
-                      {appt.status === "completed" && (
+                      {appt.doctor_id && (
+                        <Link
+                          to={`/doctors/${appt.doctor_id}`}
+                          className="text-xs font-semibold text-teal-600 hover:text-teal-800"
+                        >
+                          View doctor →
+                        </Link>
+                      )}
+                      {appt.status === "completed" && appt.doctor_id && (
                         <button
                           onClick={() => setReviewTarget({
-                            doctorId: appt.doctor_id,
+                            doctorId: appt.doctor_id!,
                             doctorName: (appt.doctor as { full_name?: string })?.full_name ?? "Doctor",
                           })}
                           className="text-xs font-semibold text-amber-600 hover:text-amber-800 underline"

@@ -475,7 +475,7 @@ export async function listPatientAppointments(patientId: string): Promise<Appoin
   const sb = getSupabase();
   const { data, error } = await sb
     .from("appointments")
-    .select("*, doctor:doctors(full_name, specialization, photo_url, consultation_fee)")
+    .select("*, doctor:doctors!doctor_id(full_name, specialization, photo_url, consultation_fee)")
     .eq("patient_id", patientId)
     .order("created_at", { ascending: false });
   if (error) throw error;
@@ -485,9 +485,10 @@ export async function listPatientAppointments(patientId: string): Promise<Appoin
 export async function listDoctorAppointments(doctorId: string): Promise<AppointmentRow[]> {
   if (!isSupabaseConfigured()) return [];
   const sb = getSupabase();
+  // Use !patient_id FK hint to avoid ambiguity with any cached schema
   const { data, error } = await sb
     .from("appointments")
-    .select("*, patient:profiles(full_name, email)")
+    .select("*, patient:profiles!patient_id(full_name, email)")
     .eq("doctor_id", doctorId)
     .order("created_at", { ascending: false });
   if (error) throw error;
@@ -513,7 +514,7 @@ export async function listAllAppointments(): Promise<AppointmentRow[]> {
   const sb = getSupabase();
   const { data, error } = await sb
     .from("appointments")
-    .select("*, doctor:doctors(full_name, specialization), patient:profiles(full_name, email)")
+    .select("*, doctor:doctors!doctor_id(full_name, specialization), patient:profiles!patient_id(full_name, email)")
     .order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []) as AppointmentRow[];
