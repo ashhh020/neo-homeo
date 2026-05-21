@@ -41,57 +41,7 @@ const testimonials = [
 
 // trust pills are now embedded inside the hero stat badges
 
-/* ── animated hero chat demo ── */
-const chatDemoMessages = [
-  { role: "ai", text: "Hi! What's your main concern today?", delay: 0 },
-  { role: "user", text: "I get migraines before exams, behind my eyes.", delay: 1.2 },
-  { role: "ai", text: "Thank you. How often do they occur, and what helps?", delay: 2.5 },
-  { role: "user", text: "2–3 times a month. Sleep helps a little.", delay: 3.7 },
-  { role: "ai", text: "Noted. I'll also ask about stress, sleep, and lifestyle next.", delay: 5 },
-];
 
-function ChatDemo() {
-  const [visible, setVisible] = useState(0);
-  useEffect(() => {
-    const timers = chatDemoMessages.map((m, i) =>
-      setTimeout(() => setVisible(i + 1), m.delay * 1000 + 600)
-    );
-    const reset = setTimeout(() => setVisible(0), 8500);
-    return () => { timers.forEach(clearTimeout); clearTimeout(reset); };
-  }, [visible]);
-
-  return (
-    <div className="space-y-3 text-sm">
-      {chatDemoMessages.slice(0, visible).map((m, i) => (
-        <motion.div
-          key={i}
-          initial={{ opacity: 0, y: 8, x: m.role === "user" ? 10 : -10 }}
-          animate={{ opacity: 1, y: 0, x: 0 }}
-          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-          className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
-        >
-          <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-            m.role === "user"
-              ? "bg-teal-600 text-white rounded-br-sm"
-              : "bg-white/90 border border-teal-100 text-teal-900 rounded-bl-sm shadow-sm"
-          }`}>
-            {m.text}
-          </div>
-        </motion.div>
-      ))}
-      {visible < chatDemoMessages.length && visible > 0 && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
-          <div className="bg-white/90 border border-teal-100 rounded-2xl rounded-bl-sm px-4 py-3 flex gap-1.5">
-            {[0, 1, 2].map((i) => (
-              <motion.div key={i} className="w-1.5 h-1.5 rounded-full bg-teal-400"
-                animate={{ y: [0, -4, 0] }} transition={{ duration: 0.7, delay: i * 0.16, repeat: Infinity }} />
-            ))}
-          </div>
-        </motion.div>
-      )}
-    </div>
-  );
-}
 
 /* ── FAQ accordion item ── */
 function FaqItem({ q, a }: { q: string; a: string }) {
@@ -285,74 +235,52 @@ export default function Landing() {
               </motion.div>
             </div>
 
-            {/* ── Right column — chat demo card ── */}
+            {/* ── Right column — doctor image ── */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.93, y: 24 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ duration: 0.75, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-              className="relative"
+              initial={{ opacity: 0, x: 30, y: 10 }}
+              animate={{ opacity: 1, x: 0, y: 0 }}
+              transition={{ duration: 0.85, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              className="relative flex justify-center lg:justify-end"
             >
-              {/* Glow */}
-              <div className="absolute -inset-4 rounded-[2.5rem] bg-gradient-to-br from-teal-300/40 via-cyan-200/20 to-violet-300/30 blur-2xl" />
+              {/* Soft glow behind image */}
+              <div className="absolute inset-0 bg-gradient-to-b from-teal-300/20 via-cyan-200/10 to-transparent blur-2xl rounded-full pointer-events-none" />
 
-              {/* Floating badge — top right */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.9 }}
-                className="absolute -top-4 -right-4 z-10 flex items-center gap-2.5 bg-white rounded-2xl px-4 py-2.5 shadow-xl border border-teal-50"
-              >
-                <span className="text-xl">🩺</span>
-                <div>
-                  <p className="text-xs font-black text-teal-950">500+</p>
-                  <p className="text-[10px] text-teal-800/50 font-semibold">Verified Doctors</p>
-                </div>
-              </motion.div>
+              {/* Doctor image — fills right column naturally */}
+              <div className="relative w-full max-w-lg">
+                <img
+                  src="/hero-doctors.png"
+                  alt="Certified homeopathic doctors"
+                  className="w-full h-auto object-contain drop-shadow-2xl select-none"
+                  draggable={false}
+                />
 
-              {/* Floating badge — bottom left */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 1.1 }}
-                className="absolute -bottom-4 -left-4 z-10 flex items-center gap-2.5 bg-white rounded-2xl px-4 py-2.5 shadow-xl border border-teal-50"
-              >
-                <span className="text-xl">💚</span>
-                <div>
-                  <p className="text-xs font-black text-teal-950">10,000+</p>
-                  <p className="text-[10px] text-teal-800/50 font-semibold">Patients Served</p>
-                </div>
-              </motion.div>
-
-              {/* Main card */}
-              <div className="relative glass-panel p-6 space-y-4 overflow-hidden rounded-3xl">
-                <div className="absolute inset-0 bg-gradient-to-br from-white/80 via-teal-50/30 to-cyan-50/40 pointer-events-none" />
-                <div className="relative flex items-center gap-3">
-                  <div className="relative w-10 h-10 flex-shrink-0">
-                    <div className="absolute inset-0 rounded-full animate-spin"
-                      style={{ background: "conic-gradient(from 0deg,#2dd4bf,#22d3ee,#a78bfa,#2dd4bf)", animationDuration: "3s" }} />
-                    <div className="absolute inset-[2px] rounded-full bg-white flex items-center justify-center text-base">🩺</div>
-                  </div>
+                {/* Floating badge — top right corner of image */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.75, y: -10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ delay: 0.9, type: "spring", stiffness: 260, damping: 20 }}
+                  className="absolute top-8 -right-4 md:right-0 z-10 flex items-center gap-3 bg-white/95 backdrop-blur-sm rounded-2xl px-4 py-3 shadow-2xl border border-white"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center text-xl flex-shrink-0">🩺</div>
                   <div>
-                    <p className="text-sm font-bold text-teal-950">Dr. Neo</p>
-                    <div className="flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      <span className="text-xs text-teal-800/50">AI assessment active</span>
-                    </div>
+                    <p className="text-sm font-black text-teal-950 leading-none">10,000+</p>
+                    <p className="text-[11px] text-teal-800/55 font-semibold mt-0.5">Patients Served</p>
                   </div>
-                  <div className="ml-auto flex gap-1">
-                    {["bg-rose-400","bg-amber-400","bg-emerald-400"].map((c) => (
-                      <div key={c} className={`w-3 h-3 rounded-full ${c}`} />
-                    ))}
+                </motion.div>
+
+                {/* Floating badge — bottom left corner of image */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.75, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ delay: 1.1, type: "spring", stiffness: 260, damping: 20 }}
+                  className="absolute bottom-16 -left-4 md:left-0 z-10 flex items-center gap-3 bg-white/95 backdrop-blur-sm rounded-2xl px-4 py-3 shadow-2xl border border-white"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-xl flex-shrink-0">👨‍⚕️</div>
+                  <div>
+                    <p className="text-sm font-black text-teal-950 leading-none">500+</p>
+                    <p className="text-[11px] text-teal-800/55 font-semibold mt-0.5">Verified Doctors</p>
                   </div>
-                </div>
-                <div className="relative min-h-[220px]">
-                  <ChatDemo />
-                </div>
-                <div className="relative flex gap-2 flex-wrap pt-1">
-                  {["Sleep pattern", "Stress level", "Diet type", "Triggers"].map((chip) => (
-                    <span key={chip} className="text-xs px-3 py-1.5 rounded-full bg-teal-50 border border-teal-100 text-teal-700 font-medium">
-                      {chip}
-                    </span>
-                  ))}
-                </div>
+                </motion.div>
               </div>
             </motion.div>
           </motion.div>
