@@ -4,6 +4,8 @@ import { motion } from "framer-motion";
 import { NeoLogo, PageShell } from "../components/Shell";
 import { NotificationBell } from "../components/NotificationBell";
 import { ReviewModal } from "../components/ReviewModal";
+import { PaymentModal } from "../components/PaymentModal";
+import { AppointmentReceipt } from "../components/AppointmentReceipt";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../components/Toast";
 import {
@@ -59,6 +61,10 @@ export default function PatientDashboard() {
   const [loadingAppts, setLoadingAppts] = useState(true);
   const [bookingId, setBookingId] = useState<string | null>(null); // doctorId being booked
   const [reviewTarget, setReviewTarget] = useState<{ doctorId: string; doctorName: string } | null>(null);
+  // Payment modal
+  const [paymentTarget, setPaymentTarget] = useState<MatchedDoctor | null>(null);
+  // Appointment receipt
+  const [receiptAppt, setReceiptAppt] = useState<AppointmentRow | null>(null);
 
   // Profile edit state
   const [saving, setSaving] = useState(false);
@@ -149,17 +155,28 @@ export default function PatientDashboard() {
     }
   }
 
-  async function handleBook(doc: MatchedDoctor) {
-    if (!user) return;
-    setBookingId(doc.id);
+  /** Step 1 — open payment modal */
+  function handleBook(doc: MatchedDoctor) {
+    setPaymentTarget(doc);
+  }
+
+  /** Step 2 — payment succeeded, create appointment */
+  async function handlePaymentSuccess(paymentId: string) {
+    if (!user || !paymentTarget) return;
+    setPaymentTarget(null);
+    setBookingId(paymentTarget.id);
     try {
-      await bookAppointment({ patientId: user.id, doctorId: doc.id });
+      await bookAppointment({
+        patientId: user.id,
+        doctorId: paymentTarget.id,
+        notes: `Payment ID: ${paymentId}`,
+      });
       const appts = await listPatientAppointments(user.id);
       setAppointments(appts);
-      toast(`Appointment requested with ${doc.full_name}!`);
+      toast(`Payment successful! Appointment requested with ${paymentTarget.full_name}.`);
       setTab("appointments");
     } catch (e) {
-      toast(e instanceof Error ? e.message : "Could not book appointment", "error");
+      toast(e instanceof Error ? e.message : "Payment done but booking failed — contact support", "error");
     } finally {
       setBookingId(null);
     }
@@ -463,16 +480,33 @@ export default function PatientDashboard() {
                           View doctor →
                         </Link>
                       )}
-                      {appt.status === "completed" && appt.doctor_id && (
+                      {/* Receipt button for confirmed appointments */}
+                      {appt.status === "confirmed" && (
                         <button
-                          onClick={() => setReviewTarget({
-                            doctorId: appt.doctor_id!,
-                            doctorName: (appt.doctor as { full_name?: string })?.full_name ?? "Doctor",
-                          })}
-                          className="text-xs font-semibold text-amber-600 hover:text-amber-800 underline"
+                          onClick={() => setReceiptAppt(appt)}
+                          className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 hover:bg-emerald-100 px-3 py-1 rounded-full transition"
                         >
-                          ★ Leave review
+                          📋 View Details
                         </button>
+                      )}
+                      {appt.status === "completed" && appt.doctor_id && (
+                        <>
+                          <button
+                            onClick={() => setReceiptAppt(appt)}
+                            className="text-xs font-semibold text-teal-600 hover:text-teal-800 underline"
+                          >
+                            📋 View receipt
+                          </button>
+                          <button
+                            onClick={() => setReviewTarget({
+                              doctorId: appt.doctor_id!,
+                              doctorName: (appt.doctor as { full_name?: string })?.full_name ?? "Doctor",
+                            })}
+                            className="text-xs font-semibold text-amber-600 hover:text-amber-800 underline"
+                          >
+                            ★ Leave review
+                          </button>
+                        </>
                       )}
                       {appt.status !== "cancelled" && appt.status !== "completed" && (
                         <button
@@ -658,6 +692,31 @@ export default function PatientDashboard() {
           doctorId={reviewTarget.doctorId}
           doctorName={reviewTarget.doctorName}
           onClose={() => setReviewTarget(null)}
+        />
+      )}
+
+      {/* Payment modal — opens before booking */}
+      {paymentTarget && user && (
+        <PaymentModal
+          doctorName={paymentTarget.full_name}
+          specialization={paymentTarget.specialization}
+          fee={paymentTarget.consultation_fee}
+          patientName={profile?.full_name ?? user.email ?? "Patient"}
+          patientEmail={user.email ?? ""}
+          onSuccess={(paymentId) => void handlePaymentSuccess(paymentId)}
+          onClose={() => setPaymentTarget(null)}
+        />
+      )}
+
+      {/* Appointment receipt — opens after confirmed */}
+      {receiptAppt && (
+        <AppointmentReceipt
+          appointment={receiptAppt}
+          patientName={profile?.full_name ?? user?.email ?? "Patient"}
+          patientEmail={user?.email ?? ""}
+          patientDetails={patientDetails ?? null}
+          latestAssessment={assessments[0] ?? null}
+          onClose={() => setReceiptAppt(null)}
         />
       )}
     </PageShell>
