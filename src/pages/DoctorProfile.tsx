@@ -96,7 +96,7 @@ export default function DoctorProfile() {
             </div>
 
             <div className="text-center sm:text-right flex-shrink-0">
-              <p className="text-3xl font-bold text-amber-500">★ {Number(doc.rating).toFixed(1)}</p>
+              <p className="text-3xl font-bold text-amber-500">{Number(doc.rating).toFixed(1)} / 5</p>
               <p className="text-xs text-teal-800/50">{doc.review_count} review{doc.review_count !== 1 ? "s" : ""}</p>
             </div>
           </div>
@@ -119,7 +119,7 @@ export default function DoctorProfile() {
               className="glass-panel p-5 space-y-2">
               <h2 className="text-sm font-semibold uppercase tracking-wider text-teal-800/60">Clinic</h2>
               {doc.clinic_name && <p className="text-sm font-semibold text-teal-950">{doc.clinic_name}</p>}
-              {doc.clinic_address && <p className="text-sm text-teal-900/70">📍 {doc.clinic_address}</p>}
+              {doc.clinic_address && <p className="text-sm text-teal-900/70">{doc.clinic_address}</p>}
             </motion.div>
           )}
 
@@ -141,8 +141,8 @@ export default function DoctorProfile() {
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}
               className="glass-panel p-5 space-y-2">
               <h2 className="text-sm font-semibold uppercase tracking-wider text-teal-800/60">Contact</h2>
-              <p className="text-sm text-teal-900/80">✉ {doc.email}</p>
-              {doc.phone && <p className="text-sm text-teal-900/80">📞 {doc.phone}</p>}
+              <p className="text-sm text-teal-900/80">{doc.email}</p>
+              {doc.phone && <p className="text-sm text-teal-900/80">{doc.phone}</p>}
             </motion.div>
           )}
         </div>
@@ -168,7 +168,6 @@ export default function DoctorProfile() {
             </div>
           ) : (
             <div className="glass-panel p-8 text-center space-y-3">
-              <p className="text-3xl">📅</p>
               <p className="font-semibold text-teal-950">Online booking coming soon</p>
               <p className="text-sm text-teal-900/65">
                 This doctor hasn&apos;t linked a booking calendar yet. Sign up and get matched — our care desk will coordinate.

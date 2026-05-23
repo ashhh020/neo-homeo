@@ -45,7 +45,7 @@ export default function ResetPassword() {
       <PageShell>
         <div className="min-h-screen flex items-center justify-center px-4">
           <div className="w-full max-w-md glass-panel p-8 space-y-4 text-center">
-            <div className="text-6xl">✅</div>
+            <div className="w-16 h-16 mx-auto rounded-full bg-emerald-100 flex items-center justify-center"><svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#059669" strokeWidth="2.5"><path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round"/></svg></div>
             <h1 className="text-2xl font-semibold text-teal-950">Password updated!</h1>
             <p className="text-sm text-teal-900/70">Redirecting you to sign in…</p>
           </div>

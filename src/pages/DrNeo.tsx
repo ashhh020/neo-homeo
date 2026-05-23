@@ -16,14 +16,14 @@ import {
 type Step = "lang" | "info" | "chat" | "complete";
 
 const LANGUAGES = [
-  { name: "English", flag: "🇬🇧", bcp: "en-IN", color: "from-blue-500 to-indigo-600" },
-  { name: "Hindi", flag: "🇮🇳", bcp: "hi-IN", color: "from-orange-500 to-rose-600" },
-  { name: "Telugu", flag: "🌿", bcp: "te-IN", color: "from-emerald-500 to-teal-600" },
-  { name: "Urdu", flag: "☪️", bcp: "ur-PK", color: "from-green-600 to-emerald-700" },
-  { name: "Malayalam", flag: "🌴", bcp: "ml-IN", color: "from-teal-500 to-cyan-600" },
-  { name: "Tamil", flag: "🏛️", bcp: "ta-IN", color: "from-yellow-500 to-orange-600" },
-  { name: "Marathi", flag: "🦁", bcp: "mr-IN", color: "from-purple-500 to-violet-600" },
-  { name: "Kannada", flag: "🌺", bcp: "kn-IN", color: "from-pink-500 to-rose-600" },
+  { name: "English", flag: "EN", bcp: "en-IN", color: "from-blue-500 to-indigo-600" },
+  { name: "Hindi", flag: "HI", bcp: "hi-IN", color: "from-orange-500 to-rose-600" },
+  { name: "Telugu", flag: "TE", bcp: "te-IN", color: "from-emerald-500 to-teal-600" },
+  { name: "Urdu", flag: "UR", bcp: "ur-PK", color: "from-green-600 to-emerald-700" },
+  { name: "Malayalam", flag: "ML", bcp: "ml-IN", color: "from-teal-500 to-cyan-600" },
+  { name: "Tamil", flag: "TA", bcp: "ta-IN", color: "from-yellow-500 to-orange-600" },
+  { name: "Marathi", flag: "MR", bcp: "mr-IN", color: "from-purple-500 to-violet-600" },
+  { name: "Kannada", flag: "KN", bcp: "kn-IN", color: "from-pink-500 to-rose-600" },
 ];
 
 const INTROS: Record<string, string> = {
@@ -104,7 +104,7 @@ function DrNeoAvatar({ size = 40 }: { size?: number }) {
       <div
         className="absolute inset-[2px] rounded-full bg-[#0a1628] flex items-center justify-center"
       >
-        <span style={{ fontSize: size * 0.45 }}>🩺</span>
+        <svg width={size * 0.45} height={size * 0.45} fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth="1.8"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" strokeLinecap="round" strokeLinejoin="round"/></svg>
       </div>
     </motion.div>
   );
@@ -293,7 +293,7 @@ export default function DrNeo() {
                       ${selectedLang === lang.name ? "border-teal-400/60 bg-teal-500/20" : "bg-white/5 hover:bg-white/10"}`}
                   >
                     <div className={`absolute inset-0 bg-gradient-to-br ${lang.color} opacity-0 group-hover:opacity-10 transition-opacity`} />
-                    <div className="text-2xl mb-1">{lang.flag}</div>
+                    <div className="text-xs font-black mb-1 tracking-wider text-white/90">{lang.flag}</div>
                     <div className="text-xs font-semibold text-white/80">{lang.name}</div>
                   </motion.button>
                 ))}
@@ -500,7 +500,7 @@ export default function DrNeo() {
                     }`}
                     aria-label="Microphone"
                   >
-                    🎙
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" strokeLinecap="round" strokeLinejoin="round"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </motion.button>
                   <motion.button
                     whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}

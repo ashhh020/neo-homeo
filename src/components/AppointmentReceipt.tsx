@@ -63,8 +63,8 @@ export function AppointmentReceipt({ appointment, patientName, patientEmail, pat
                 <h2 className="text-2xl font-bold">Appointment Receipt</h2>
                 <p className="text-sm opacity-80 mt-0.5">#{appointment.id.slice(0, 8).toUpperCase()}</p>
               </div>
-              <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center text-3xl">
-                ✅
+              <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center">
+                <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth="2.5"><path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </div>
             </div>
           </div>
@@ -96,7 +96,6 @@ export function AppointmentReceipt({ appointment, patientName, patientEmail, pat
               </div>
               {appointment.scheduled_at && (
                 <div className="flex items-center gap-2 text-sm text-teal-900/70 px-1">
-                  <span>📅</span>
                   <span>{new Date(appointment.scheduled_at).toLocaleString("en-IN", { dateStyle: "full", timeStyle: "short" })}</span>
                 </div>
               )}
@@ -152,7 +151,7 @@ export function AppointmentReceipt({ appointment, patientName, patientEmail, pat
                 <div className="bg-gradient-to-br from-teal-50 to-cyan-50 border border-teal-100 rounded-2xl px-5 py-4">
                   <div className="flex justify-between items-start gap-2 mb-3">
                     <div className="flex items-center gap-2 text-xs text-teal-800/50">
-                      <span>🤖 Dr. Neo</span>
+                      <span>Dr. Neo</span>
                       {latestAssessment.language && <span>· {latestAssessment.language}</span>}
                     </div>
                     <span className="text-[10px] text-teal-800/40">
@@ -190,7 +189,7 @@ export function AppointmentReceipt({ appointment, patientName, patientEmail, pat
                 onClick={() => window.print()}
                 className="px-5 py-3 rounded-2xl border border-teal-100 text-teal-900 text-sm font-semibold hover:bg-teal-50 transition"
               >
-                🖨 Print
+                Print
               </button>
             </div>
 

@@ -172,7 +172,7 @@ export function PaymentModal({
 
             {/* Trust badges */}
             <div className="flex flex-wrap gap-2">
-              {["🔒 Secure payment", "✓ Instant confirmation", "↩ Refund policy applied"].map((b) => (
+              {["Secure payment", "Instant confirmation", "Refund policy applied"].map((b) => (
                 <span key={b} className="text-[10px] font-semibold text-teal-700 bg-teal-50 border border-teal-100 px-3 py-1 rounded-full">
                   {b}
                 </span>

@@ -417,7 +417,7 @@ export async function notifyDoctorOfDecision(
   await createNotification({
     userId: data.profile_id,
     title: status === "approved"
-      ? "🎉 Your application was approved!"
+      ? "Your application was approved!"
       : "Your application was reviewed",
     body: status === "approved"
       ? "Welcome to NeoHomeo! Your profile is now live. Log in to complete your dashboard."
@@ -496,7 +496,7 @@ export async function bookAppointment(input: {
     if (doc?.profile_id) {
       await createNotification({
         userId: doc.profile_id,
-        title: "📅 New appointment request",
+        title: "New appointment request",
         body: `${patient?.full_name ?? "A patient"} has requested an appointment with you.`,
         link: "/doctor",
       });
@@ -554,10 +554,10 @@ export async function updateAppointmentStatus(
     if (!appt?.patient_id) return;
     const doctorName = (appt.doctor as { full_name?: string } | null)?.full_name ?? "Your doctor";
     const msgs: Record<AppointmentStatus, { title: string; body: string }> = {
-      confirmed:  { title: "✅ Appointment confirmed", body: `${doctorName} confirmed your appointment.` },
-      cancelled:  { title: "❌ Appointment cancelled", body: `Your appointment with ${doctorName} was cancelled.` },
-      completed:  { title: "🎉 Appointment completed", body: `Your appointment with ${doctorName} is complete. Leave a review!` },
-      pending:    { title: "📋 Appointment updated", body: `Your appointment status changed to pending.` },
+      confirmed:  { title: "Appointment confirmed", body: `${doctorName} confirmed your appointment.` },
+      cancelled:  { title: "Appointment cancelled", body: `Your appointment with ${doctorName} was cancelled.` },
+      completed:  { title: "Appointment completed", body: `Your appointment with ${doctorName} is complete. Leave a review!` },
+      pending:    { title: "Appointment updated", body: `Your appointment status changed to pending.` },
     };
     const msg = msgs[status];
     if (msg) {

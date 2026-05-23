@@ -194,10 +194,10 @@ export default function PatientDashboard() {
     }
   }
 
-  const tabs: { id: Tab; label: string; icon: string; badge?: number }[] = [
-    { id: "dashboard", label: "Dashboard", icon: "🏠" },
-    { id: "appointments", label: "Appointments", icon: "📅", badge: pendingAppts || undefined },
-    { id: "profile", label: "Edit Profile", icon: "👤" },
+  const tabs: { id: Tab; label: string; badge?: number }[] = [
+    { id: "dashboard", label: "Dashboard" },
+    { id: "appointments", label: "Appointments", badge: pendingAppts || undefined },
+    { id: "profile", label: "Edit Profile" },
   ];
 
   return (
@@ -238,8 +238,7 @@ export default function PatientDashboard() {
               className={`relative flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition
                 ${tab === t.id ? "bg-teal-600 text-white shadow" : "text-teal-900/70 hover:bg-teal-50"}`}
             >
-              <span>{t.icon}</span>
-              <span className="hidden sm:inline">{t.label}</span>
+              <span>{t.label}</span>
               {t.badge ? (
                 <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-400 text-white text-[9px] font-bold flex items-center justify-center">
                   {t.badge}
@@ -433,7 +432,6 @@ export default function PatientDashboard() {
               </div>
             ) : appointments.length === 0 ? (
               <div className="glass-panel p-12 text-center space-y-3">
-                <p className="text-4xl">📅</p>
                 <p className="font-semibold text-teal-950">No appointments yet</p>
                 <p className="text-sm text-teal-900/65">Go to Dashboard, pick a matched doctor, and click Book.</p>
                 <button onClick={() => setTab("dashboard")}
@@ -463,7 +461,7 @@ export default function PatientDashboard() {
                       </p>
                       {appt.scheduled_at && (
                         <p className="text-xs text-teal-800/60">
-                          📅 {new Date(appt.scheduled_at).toLocaleString()}
+                          {new Date(appt.scheduled_at).toLocaleString()}
                         </p>
                       )}
                       <p className="text-xs text-teal-800/50">
@@ -488,7 +486,7 @@ export default function PatientDashboard() {
                           onClick={() => setReceiptAppt(appt)}
                           className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 hover:bg-emerald-100 px-3 py-1 rounded-full transition"
                         >
-                          📋 View Details
+                          View Details
                         </button>
                       )}
                       {appt.status === "completed" && appt.doctor_id && (
@@ -497,7 +495,7 @@ export default function PatientDashboard() {
                             onClick={() => setReceiptAppt(appt)}
                             className="text-xs font-semibold text-teal-600 hover:text-teal-800 underline"
                           >
-                            📋 View receipt
+                            View receipt
                           </button>
                           <button
                             onClick={() => setReviewTarget({
@@ -506,7 +504,7 @@ export default function PatientDashboard() {
                             })}
                             className="text-xs font-semibold text-amber-600 hover:text-amber-800 underline"
                           >
-                            ★ Leave review
+                            Leave review
                           </button>
                         </>
                       )}

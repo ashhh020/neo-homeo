@@ -27,12 +27,12 @@ type Tab = "overview" | "applications" | "doctors" | "patients" | "appointments"
 
 const NAV: { id: Tab; label: string; icon: string }[] = [
   { id: "overview", label: "Overview", icon: "⊞" },
-  { id: "applications", label: "Applications", icon: "📋" },
-  { id: "doctors", label: "Live Doctors", icon: "👨‍⚕️" },
-  { id: "patients", label: "Patients", icon: "🏥" },
-  { id: "appointments", label: "Appointments", icon: "📅" },
-  { id: "assessments", label: "Assessments", icon: "🧠" },
-  { id: "settings", label: "Settings", icon: "⚙️" },
+  { id: "applications", label: "Applications", icon: "≡" },
+  { id: "doctors", label: "Live Doctors", icon: "+" },
+  { id: "patients", label: "Patients", icon: "+" },
+  { id: "appointments", label: "Appointments", icon: "≡" },
+  { id: "assessments", label: "Assessments", icon: "≡" },
+  { id: "settings", label: "Settings", icon: "·" },
 ];
 
 const STATUS_COLORS: Record<string, string> = {
@@ -450,7 +450,7 @@ export default function AdminDashboard() {
           onClick={() => void signOut()}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm font-medium text-rose-600 hover:bg-rose-50 transition"
         >
-          <span>🚪</span>
+          <span>←</span>
           {sidebarOpen && <span>Logout</span>}
         </motion.button>
       </div>
@@ -499,10 +499,10 @@ export default function AdminDashboard() {
             {tab === "overview" && (
               <motion.div key="overview" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
                 <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <StatCard label="Pending Reviews" value={stats.pendingDoctors} icon="⏳" color="bg-amber-400" />
-                  <StatCard label="Live Doctors" value={stats.approvedDoctors} icon="✅" color="bg-teal-400" />
-                  <StatCard label="Registered Users" value={patients.length} icon="🏥" color="bg-blue-400" />
-                  <StatCard label="Assessments" value={stats.assessmentsCount} icon="📊" color="bg-violet-400" />
+                  <StatCard label="Pending Reviews" value={stats.pendingDoctors} icon="·" color="bg-amber-400" />
+                  <StatCard label="Live Doctors" value={stats.approvedDoctors} icon="·" color="bg-teal-400" />
+                  <StatCard label="Registered Users" value={patients.length} icon="·" color="bg-blue-400" />
+                  <StatCard label="Assessments" value={stats.assessmentsCount} icon="·" color="bg-violet-400" />
                 </div>
 
                 {/* quick actions */}
@@ -576,7 +576,6 @@ export default function AdminDashboard() {
 
                 {filteredApps.length === 0 ? (
                   <div className="text-center py-16 bg-white rounded-3xl border border-teal-50">
-                    <p className="text-5xl mb-3">🎉</p>
                     <p className="font-semibold text-teal-950">All caught up!</p>
                     <p className="text-sm text-teal-900/60 mt-1">No pending doctor applications.</p>
                   </div>
@@ -603,7 +602,6 @@ export default function AdminDashboard() {
 
                 {filteredDoctors.length === 0 ? (
                   <div className="text-center py-16 bg-white rounded-3xl border border-teal-50">
-                    <p className="text-5xl mb-3">👨‍⚕️</p>
                     <p className="font-semibold text-teal-950">No live doctors yet</p>
                     <p className="text-sm text-teal-900/60 mt-1">Approve applications to publish profiles.</p>
                     <button onClick={() => setTab("applications")} className="mt-4 text-sm font-semibold text-teal-600 underline">
@@ -633,7 +631,7 @@ export default function AdminDashboard() {
                         <div className="flex-1 min-w-0 space-y-1">
                           <div className="flex items-start justify-between gap-2">
                             <h3 className="font-bold text-teal-950 truncate">{d.full_name}</h3>
-                            <span className="text-amber-600 font-semibold text-sm flex-shrink-0">★ {Number(d.rating).toFixed(1)}</span>
+                            <span className="text-amber-600 font-semibold text-sm flex-shrink-0">{Number(d.rating).toFixed(1)} / 5</span>
                           </div>
                           <p className="text-sm text-teal-800/70">{d.specialization}</p>
                           <p className="text-xs text-teal-900/55">{d.experience_years}+ yrs · {d.languages.join(", ")}</p>
@@ -672,7 +670,6 @@ export default function AdminDashboard() {
 
                 {filteredPatients.length === 0 ? (
                   <div className="text-center py-16 bg-white rounded-3xl border border-teal-50">
-                    <p className="text-5xl mb-3">🏥</p>
                     <p className="font-semibold text-teal-950">No users found</p>
                     <p className="text-sm text-teal-900/60 mt-1">Users appear here once they sign up.</p>
                   </div>
@@ -743,7 +740,6 @@ export default function AdminDashboard() {
                 <p className="text-sm text-teal-900/70">{allAppointments.length} total appointments</p>
                 {allAppointments.length === 0 ? (
                   <div className="text-center py-16 bg-white rounded-3xl border border-teal-50">
-                    <p className="text-5xl mb-3">📅</p>
                     <p className="font-semibold text-teal-950">No appointments yet</p>
                   </div>
                 ) : (
@@ -809,12 +805,11 @@ export default function AdminDashboard() {
             {tab === "assessments" && (
               <motion.div key="assess" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <StatCard label="Total assessments" value={stats.assessmentsCount} icon="🧠" color="bg-violet-400" />
-                  <StatCard label="Registered users" value={patients.length} icon="🏥" color="bg-cyan-400" />
+                  <StatCard label="Total assessments" value={stats.assessmentsCount} icon="·" color="bg-violet-400" />
+                  <StatCard label="Registered users" value={patients.length} icon="·" color="bg-cyan-400" />
                 </div>
                 {allAssessments.length === 0 ? (
                   <div className="bg-white rounded-3xl border border-teal-50 shadow-glass p-8 text-center space-y-3">
-                    <p className="text-4xl">📊</p>
                     <p className="font-bold text-teal-950">No assessments yet</p>
                     <p className="text-sm text-teal-900/60">Patient assessments will appear here once created.</p>
                   </div>

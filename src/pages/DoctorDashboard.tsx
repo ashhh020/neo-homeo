@@ -177,11 +177,11 @@ export default function DoctorDashboard() {
 
   const pendingCount = appointments.filter((a) => a.status === "pending").length;
 
-  const tabs: { id: Tab; label: string; icon: string; badge?: number }[] = [
-    { id: "profile", label: "My Profile", icon: "👤" },
-    { id: "appointments", label: "Appointments", icon: "📋", badge: pendingCount || undefined },
-    { id: "calendar", label: "Calendly", icon: "📅" },
-    { id: "settings", label: "Settings", icon: "⚙️" },
+  const tabs: { id: Tab; label: string; badge?: number }[] = [
+    { id: "profile", label: "My Profile" },
+    { id: "appointments", label: "Appointments", badge: pendingCount || undefined },
+    { id: "calendar", label: "Calendly" },
+    { id: "settings", label: "Settings" },
   ];
 
   return (
@@ -233,7 +233,7 @@ export default function DoctorDashboard() {
             </div>
             <div className="text-right">
               <p className="text-xs text-teal-800/50">Rating</p>
-              <p className="text-2xl font-bold text-amber-500">★ {Number(doc.rating).toFixed(1)}</p>
+              <p className="text-2xl font-bold text-amber-500">{Number(doc.rating).toFixed(1)} / 5</p>
               <p className="text-xs text-teal-800/50">{doc.review_count} reviews</p>
             </div>
           </div>
@@ -245,8 +245,7 @@ export default function DoctorDashboard() {
             <button key={t.id} onClick={() => setTab(t.id)}
               className={`relative flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition
                 ${tab === t.id ? "bg-teal-600 text-white shadow" : "text-teal-900/70 hover:bg-teal-50"}`}>
-              <span>{t.icon}</span>
-              <span className="hidden sm:inline">{t.label}</span>
+              <span>{t.label}</span>
               {t.badge ? (
                 <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-400 text-white text-[9px] font-bold flex items-center justify-center">
                   {t.badge}
@@ -277,7 +276,6 @@ export default function DoctorDashboard() {
               </div>
             ) : appointments.length === 0 ? (
               <div className="glass-panel p-12 text-center space-y-3">
-                <p className="text-4xl">📋</p>
                 <p className="font-semibold text-teal-950">No appointments yet</p>
                 <p className="text-sm text-teal-900/65">When patients book with you, their requests appear here.</p>
               </div>
@@ -300,7 +298,7 @@ export default function DoctorDashboard() {
                         </div>
                         <p className="text-xs text-teal-800/60">{patient?.email ?? ""}</p>
                         {appt.scheduled_at && (
-                          <p className="text-xs text-teal-800/60">📅 {new Date(appt.scheduled_at).toLocaleString()}</p>
+                          <p className="text-xs text-teal-800/60">{new Date(appt.scheduled_at).toLocaleString()}</p>
                         )}
                         <p className="text-xs text-teal-800/50">Requested {new Date(appt.created_at).toLocaleDateString()}</p>
                         {appt.notes && (

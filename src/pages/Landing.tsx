@@ -1,4 +1,4 @@
-import { motion, useScroll, useTransform } from "framer-motion";
+import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { NeoLogo, PageShell } from "../components/Shell";
@@ -6,23 +6,23 @@ import { listApprovedDoctors, type DoctorRow } from "../lib/api";
 
 /* ── data ── */
 const steps = [
-  { icon: "🧠", title: "Complete AI assessment", body: "Dr. Neo gathers symptoms, lifestyle, emotions, and triggers in a warm guided conversation.", color: "from-teal-500 to-cyan-500" },
-  { icon: "🎯", title: "Get matched with a doctor", body: "AI weighs specialty, language, and availability so the fit feels completely natural.", color: "from-cyan-500 to-blue-500" },
-  { icon: "📹", title: "Online consultation", body: "Secure video or audio visit with structured notes shared to your dashboard.", color: "from-violet-500 to-purple-500" },
-  { icon: "🌿", title: "Start your healing journey", body: "Prescriptions, medicine tracking, and follow-up assessments all in one calm place.", color: "from-emerald-500 to-teal-500" },
+  { icon: "01", title: "Complete AI assessment", body: "Dr. Neo gathers symptoms, lifestyle, emotions, and triggers in a warm guided conversation.", color: "from-teal-500 to-cyan-500" },
+  { icon: "02", title: "Get matched with a doctor", body: "AI weighs specialty, language, and availability so the fit feels completely natural.", color: "from-cyan-500 to-blue-500" },
+  { icon: "03", title: "Online consultation", body: "Secure video or audio visit with structured notes shared to your dashboard.", color: "from-violet-500 to-purple-500" },
+  { icon: "04", title: "Start your healing journey", body: "Prescriptions, medicine tracking, and follow-up assessments all in one calm place.", color: "from-emerald-500 to-teal-500" },
 ];
 
 const categories = [
-  { icon: "🌿", title: "Skin problems", desc: "Eczema, acne, and chronic irritation patterns." },
-  { icon: "💆", title: "Hair fall", desc: "Diffuse shedding, post-illness recovery, scalp health." },
-  { icon: "🧠", title: "Migraine", desc: "Aura, triggers, menstrual association, and relief rhythm." },
-  { icon: "⚡", title: "PCOS", desc: "Cycles, metabolic signals, and mood-linked symptoms." },
-  { icon: "🦋", title: "Thyroid balance", desc: "Energy, temperature sensitivity, and weight shifts." },
-  { icon: "🧘", title: "Stress & anxiety", desc: "Sleep, focus, and how your body holds tension." },
-  { icon: "🌸", title: "Allergies", desc: "Seasonal flare, food sensitivity, and respiratory comfort." },
-  { icon: "🦴", title: "Joint pain", desc: "Morning stiffness, exertion limits, and inflammation cues." },
-  { icon: "🫃", title: "Digestive issues", desc: "Bloating, acidity, appetite swings, and elimination." },
-  { icon: "👶", title: "Children's care", desc: "Gentle, age-aware history taking with caregiver support." },
+  { title: "Skin problems", desc: "Eczema, acne, and chronic irritation patterns." },
+  { title: "Hair fall", desc: "Diffuse shedding, post-illness recovery, scalp health." },
+  { title: "Migraine", desc: "Aura, triggers, menstrual association, and relief rhythm." },
+  { title: "PCOS", desc: "Cycles, metabolic signals, and mood-linked symptoms." },
+  { title: "Thyroid balance", desc: "Energy, temperature sensitivity, and weight shifts." },
+  { title: "Stress & anxiety", desc: "Sleep, focus, and how your body holds tension." },
+  { title: "Allergies", desc: "Seasonal flare, food sensitivity, and respiratory comfort." },
+  { title: "Joint pain", desc: "Morning stiffness, exertion limits, and inflammation cues." },
+  { title: "Digestive issues", desc: "Bloating, acidity, appetite swings, and elimination." },
+  { title: "Children's care", desc: "Gentle, age-aware history taking with caregiver support." },
 ];
 
 const faqs = [
@@ -79,11 +79,60 @@ function AnimateHeight({ open, children }: { open: boolean; children: React.Reac
   );
 }
 
+/* ── Luma Event Popup ── */
+function LumaPopup({ onClose }: { onClose: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-teal-950/50 backdrop-blur-sm px-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <motion.div
+        initial={{ scale: 0.93, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.93, opacity: 0, y: 10 }}
+        transition={{ type: "spring", damping: 22, stiffness: 280 }}
+        className="w-full max-w-[640px] bg-white rounded-3xl shadow-2xl overflow-hidden"
+      >
+        <div className="flex items-center justify-between px-5 py-4 border-b border-teal-50">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-teal-700">Upcoming event</p>
+            <p className="text-sm font-semibold text-teal-950 mt-0.5">Join us on NeoHomeo</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-teal-50 flex items-center justify-center text-teal-600 hover:bg-teal-100 transition text-sm font-bold"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+        <div className="p-4">
+          <iframe
+            src="https://luma.com/embed/event/evt-nDJmP0tkyKT0r5Q/simple"
+            width="100%"
+            height="450"
+            frameBorder="0"
+            style={{ border: "1px solid #bfcbda88", borderRadius: 4 }}
+            allow="fullscreen; payment"
+            aria-hidden={false}
+            tabIndex={0}
+            title="NeoHomeo Event"
+          />
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 /* ── main ── */
 export default function Landing() {
   const [doctors, setDoctors] = useState<DoctorRow[]>([]);
   const [tIndex, setTIndex] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [lumaOpen, setLumaOpen] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollY } = useScroll();
   const heroY = useTransform(scrollY, [0, 400], [0, 60]);
@@ -95,8 +144,25 @@ export default function Landing() {
     return () => clearInterval(id);
   }, []);
 
+  // Auto-show Luma popup after 1.5 s (only once per session)
+  useEffect(() => {
+    if (sessionStorage.getItem("luma_dismissed")) return;
+    const t = setTimeout(() => setLumaOpen(true), 1500);
+    return () => clearTimeout(t);
+  }, []);
+
+  function closeLuma() {
+    setLumaOpen(false);
+    sessionStorage.setItem("luma_dismissed", "1");
+  }
+
   return (
     <PageShell className="hero-gradient">
+      {/* ── Luma popup ── */}
+      <AnimatePresence>
+        {lumaOpen && <LumaPopup onClose={closeLuma} />}
+      </AnimatePresence>
+
       {/* ── navbar ── */}
       <header className="fixed top-4 inset-x-0 z-50 flex justify-center px-4">
         <motion.nav
@@ -120,7 +186,9 @@ export default function Landing() {
             <Link to="/signup" className="text-sm font-bold bg-gradient-to-r from-teal-600 to-emerald-600 text-white px-5 py-2 rounded-full shadow-lg hover:shadow-teal-500/30 transition">
               Get started
             </Link>
-            <button className="md:hidden ml-1 text-teal-800" onClick={() => setMobileMenuOpen((v) => !v)}>☰</button>
+            <button className="md:hidden ml-1 text-teal-800 p-1" onClick={() => setMobileMenuOpen((v) => !v)} aria-label="Menu">
+              <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+            </button>
           </div>
         </motion.nav>
 
@@ -259,6 +327,35 @@ export default function Landing() {
           </motion.div>
         </section>
 
+        {/* ── LUMA EVENT ── */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.5 }}
+          className="space-y-8"
+        >
+          <div className="text-center space-y-3">
+            <p className="text-xs uppercase tracking-[0.35em] text-teal-700/70 font-bold">Community</p>
+            <h2 className="text-4xl font-light text-teal-950">Join us at our next event</h2>
+            <p className="text-teal-900/65 max-w-xl mx-auto">Meet the team, ask questions, and be part of the NeoHomeo community.</p>
+          </div>
+          <div className="glass-panel p-4 md:p-6 flex justify-center overflow-hidden">
+            <iframe
+              src="https://luma.com/embed/event/evt-nDJmP0tkyKT0r5Q/simple"
+              width="600"
+              height="450"
+              frameBorder="0"
+              style={{ border: "1px solid #bfcbda88", borderRadius: 4, maxWidth: "100%" }}
+              allow="fullscreen; payment"
+              aria-hidden={false}
+              tabIndex={0}
+              title="NeoHomeo Event"
+              className="w-full"
+            />
+          </div>
+        </motion.section>
+
         {/* ── HOW IT WORKS ── */}
         <section id="how" className="space-y-10">
           <div className="text-center space-y-3">
@@ -278,7 +375,7 @@ export default function Landing() {
                 className="glass-panel p-6 flex flex-col gap-3 relative overflow-hidden"
               >
                 <div className={`absolute top-0 left-0 h-1 w-full bg-gradient-to-r ${s.color}`} />
-                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${s.color} flex items-center justify-center text-xl shadow-lg`}>
+                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${s.color} flex items-center justify-center text-base font-black text-white shadow-lg`}>
                   {s.icon}
                 </div>
                 <div className="text-xs font-bold text-teal-600 uppercase tracking-wider">Step {i + 1}</div>
@@ -306,7 +403,6 @@ export default function Landing() {
                 whileHover={{ y: -4, boxShadow: "0 16px 32px rgba(13,148,136,0.14)" }}
                 className="glass-panel p-5 flex flex-col gap-2 cursor-pointer group"
               >
-                <span className="text-2xl">{c.icon}</span>
                 <h3 className="font-bold text-teal-950 text-sm">{c.title}</h3>
                 <p className="text-xs text-teal-900/60 leading-relaxed flex-1">{c.desc}</p>
                 <Link to="/assessment" className="text-xs font-bold text-teal-600 group-hover:text-teal-800 transition">
@@ -413,7 +509,6 @@ export default function Landing() {
               initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
               className="glass-panel p-12 text-center space-y-3"
             >
-              <p className="text-4xl">👨‍⚕️</p>
               <p className="font-semibold text-teal-950">Verified doctor profiles appear here</p>
               <p className="text-sm text-teal-900/65 max-w-sm mx-auto">Profiles are published after the clinical team approves applications.</p>
               <Link to="/apply" className="inline-flex text-sm font-bold text-teal-600">Apply as a doctor →</Link>
@@ -438,7 +533,7 @@ export default function Landing() {
                   <div className="flex-1 space-y-1">
                     <div className="flex justify-between gap-2">
                       <h3 className="font-bold text-teal-950">{d.full_name}</h3>
-                      <span className="text-sm text-amber-600 font-semibold">★ {Number(d.rating).toFixed(1)}</span>
+                      <span className="text-sm text-amber-600 font-semibold">{Number(d.rating).toFixed(1)} / 5</span>
                     </div>
                     <p className="text-sm text-teal-800/70">{d.specialization}</p>
                     <p className="text-xs text-teal-900/55">{d.experience_years}+ yrs · {d.languages.join(", ")}</p>
@@ -463,9 +558,9 @@ export default function Landing() {
           <div className="glass-panel p-8 max-w-3xl mx-auto text-center space-y-5 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-teal-50/60 via-transparent to-violet-50/40" />
             <div className="relative">
-              <div className="flex justify-center mb-3">
+              <div className="flex justify-center mb-3 gap-0.5">
                 {Array.from({ length: testimonials[tIndex].rating }).map((_, i) => (
-                  <span key={i} className="text-amber-400 text-lg">★</span>
+                  <svg key={i} width="18" height="18" viewBox="0 0 24 24" fill="#fbbf24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
                 ))}
               </div>
               <motion.p
@@ -560,8 +655,8 @@ export default function Landing() {
             <p>care@neohomeo.com</p>
             <p className="mt-1">+91 80 4620 4410</p>
             <div className="flex gap-3 mt-3">
-              {["𝕏", "in", "📷"].map((icon) => (
-                <div key={icon} className="w-8 h-8 rounded-full bg-teal-50 border border-teal-100 flex items-center justify-center text-sm cursor-pointer hover:bg-teal-100 transition">
+              {["𝕏", "in", "IG"].map((icon) => (
+                <div key={icon} className="w-8 h-8 rounded-full bg-teal-50 border border-teal-100 flex items-center justify-center text-xs font-bold cursor-pointer hover:bg-teal-100 transition">
                   {icon}
                 </div>
               ))}

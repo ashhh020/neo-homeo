@@ -90,7 +90,7 @@ export function NotificationBell({ userId }: { userId: string }) {
         className="relative w-10 h-10 rounded-full bg-white/70 border border-teal-100 flex items-center justify-center text-teal-700 hover:bg-white transition"
         aria-label={`Notifications${unread > 0 ? ` (${unread} unread)` : ""}`}
       >
-        🔔
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" strokeLinecap="round" strokeLinejoin="round"/></svg>
         {unread > 0 && (
           <motion.span
             key={unread}
@@ -129,7 +129,6 @@ export function NotificationBell({ userId }: { userId: string }) {
             <div className="max-h-80 overflow-y-auto divide-y divide-teal-50">
               {notes.length === 0 ? (
                 <div className="py-10 text-center">
-                  <p className="text-2xl mb-1">🔔</p>
                   <p className="text-sm text-teal-900/50">No notifications yet</p>
                   <p className="text-xs text-teal-900/35 mt-1">
                     You'll be notified about appointments and updates here.
