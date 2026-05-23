@@ -30,7 +30,7 @@ export function PageShell({
   className?: string;
 }) {
   return (
-    <div className={`relative min-h-screen bg-[#F2F4F7] text-teal-950 overflow-x-hidden ${className}`}>
+    <div className={`relative min-h-screen bg-[#F2F4F7] text-teal-950 overflow-hidden ${className}`}>
       <Blobs />
       <div className="relative z-10">{children}</div>
     </div>
