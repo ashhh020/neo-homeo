@@ -21,8 +21,8 @@ export default function PatientSignup() {
       setErr("Passwords do not match.");
       return;
     }
-    if (password.length < 6) {
-      setErr("Password must be at least 6 characters.");
+    if (password.length < 8) {
+      setErr("Password must be at least 8 characters.");
       return;
     }
     setLoading(true);

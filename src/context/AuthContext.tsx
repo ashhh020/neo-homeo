@@ -66,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await promoteDoctorIfApprovedEmail(u.id, u.email ?? null);
         }
       } catch (roleErr) {
-        console.warn("Role check failed:", roleErr);
+        if (import.meta.env.DEV) console.warn("Role check failed:", roleErr);
       }
 
       let p = await fetchMyProfile(u.id);
@@ -84,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           },
           { onConflict: "id" }
         );
-        if (upsertErr) console.warn("Failed to create profile:", upsertErr);
+        if (upsertErr && import.meta.env.DEV) console.warn("Failed to create profile:", upsertErr);
         p = await fetchMyProfile(u.id).catch(() => null);
       }
       setProfile(p);
@@ -96,7 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setPatientDetails(null);
       }
     } catch (err) {
-      console.error("Auth initialization failed:", err);
+      if (import.meta.env.DEV) console.error("Auth initialization failed:", err);
       setProfile(null);
       setPatientDetails(null);
     } finally {
@@ -118,7 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: sub } = sb.auth.onAuthStateChange((event, sess) => {
       setSession(sess);
       setUser(sess?.user ?? null);
-      if (event === "TOKEN_REFRESHED") return;
+      if (event === "TOKEN_REFRESHED" || event === "USER_UPDATED") return;
       void refreshProfile();
     });
     return () => sub.subscription.unsubscribe();

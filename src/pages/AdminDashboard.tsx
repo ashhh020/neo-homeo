@@ -16,6 +16,8 @@ import {
   setDoctorApplicationStatus,
   updateUserRole,
   type AppointmentRow,
+  type AppointmentDoctor,
+  type AppointmentPatient,
   type AssessmentWithPatient,
   type DoctorRow,
   type Profile,
@@ -258,10 +260,11 @@ export default function AdminDashboard() {
     if (p.status === "fulfilled") setPatients(p.value);
     if (appts.status === "fulfilled") setAllAppointments(appts.value);
     if (assess.status === "fulfilled") setAllAssessments(assess.value);
-    // Log any failures so they show in browser console for debugging
-    [a, d, s, p, appts, assess].forEach((r, i) => {
-      if (r.status === "rejected") console.error(`Admin load[${i}] failed:`, r.reason);
-    });
+    if (import.meta.env.DEV) {
+      [a, d, s, p, appts, assess].forEach((r, i) => {
+        if (r.status === "rejected") console.error(`Admin load[${i}] failed:`, r.reason);
+      });
+    }
   }
 
   useEffect(() => { void refresh(); }, []);
@@ -675,7 +678,8 @@ export default function AdminDashboard() {
                   </div>
                 ) : (
                   <div className="bg-white rounded-3xl border border-teal-50 shadow-glass overflow-hidden">
-                    <table className="w-full text-sm">
+                    <div className="overflow-x-auto">
+                    <table className="w-full text-sm min-w-[640px]">
                       <thead>
                         <tr className="border-b border-teal-50 text-left">
                           <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-teal-800/50">Name</th>
@@ -727,6 +731,7 @@ export default function AdminDashboard() {
                         ))}
                       </tbody>
                     </table>
+                    </div>
                   </div>
                 )}
               </motion.div>
@@ -743,7 +748,8 @@ export default function AdminDashboard() {
                   </div>
                 ) : (
                   <div className="bg-white rounded-3xl border border-teal-50 shadow-glass overflow-hidden">
-                    <table className="w-full text-sm">
+                    <div className="overflow-x-auto">
+                    <table className="w-full text-sm min-w-[640px]">
                       <thead>
                         <tr className="border-b border-teal-50 text-left">
                           <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-teal-800/50">Patient</th>
@@ -756,13 +762,13 @@ export default function AdminDashboard() {
                       <tbody className="divide-y divide-teal-50">
                         {allAppointments
                           .filter((a) => !searchQ ||
-                            ((a.patient as {full_name?: string})?.full_name ?? "").toLowerCase().includes(searchQ.toLowerCase()) ||
-                            ((a.patient as {email?: string})?.email ?? "").toLowerCase().includes(searchQ.toLowerCase()) ||
-                            ((a.doctor as {full_name?: string})?.full_name ?? "").toLowerCase().includes(searchQ.toLowerCase())
+                            ((a.patient as AppointmentPatient | undefined)?.full_name ?? "").toLowerCase().includes(searchQ.toLowerCase()) ||
+                            ((a.patient as AppointmentPatient | undefined)?.email ?? "").toLowerCase().includes(searchQ.toLowerCase()) ||
+                            ((a.doctor as AppointmentDoctor | undefined)?.full_name ?? "").toLowerCase().includes(searchQ.toLowerCase())
                           )
                           .map((appt) => {
-                            const patient = appt.patient as {full_name?: string; email?: string} | undefined;
-                            const doctor = appt.doctor as {full_name?: string; specialization?: string} | undefined;
+                            const patient = appt.patient as AppointmentPatient | undefined;
+                            const doctor = appt.doctor as AppointmentDoctor | undefined;
                             return (
                               <tr key={appt.id} className="hover:bg-teal-50/30 transition">
                                 <td className="px-5 py-3">
@@ -793,6 +799,7 @@ export default function AdminDashboard() {
                           })}
                       </tbody>
                     </table>
+                    </div>
                   </div>
                 )}
               </motion.div>

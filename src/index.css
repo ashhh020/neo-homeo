@@ -107,6 +107,17 @@ body {
 .orb-drift         { animation: orb-drift 18s ease-in-out infinite; }
 .orb-drift-reverse { animation: orb-drift 22s ease-in-out infinite reverse; }
 
+/* ─── print styles (appointment receipt) ─── */
+@media print {
+  body { background: white !important; }
+  nav, header, footer, button, .no-print { display: none !important; }
+  .fixed { position: static !important; }
+  .backdrop-blur-sm, .backdrop-blur-xl { backdrop-filter: none !important; }
+  .shadow-2xl, .shadow-xl, .shadow-lg { box-shadow: none !important; }
+  .overflow-y-auto { overflow: visible !important; max-height: none !important; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
 /* ─── hero gradient ─── */
 @keyframes hero-gradient {
   0%, 100% { background-position: 0% 50%; }

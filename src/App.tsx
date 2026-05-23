@@ -1,5 +1,6 @@
-import { lazy, Suspense, type ReactNode } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { lazy, Suspense, useEffect, type ReactNode } from "react";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 
 // Eagerly load tiny/auth pages
@@ -30,7 +31,11 @@ function Spinner() {
 }
 
 function LazyBoundary({ children }: { children: ReactNode }) {
-  return <Suspense fallback={<Spinner />}>{children}</Suspense>;
+  return (
+    <ErrorBoundary>
+      <Suspense fallback={<Spinner />}>{children}</Suspense>
+    </ErrorBoundary>
+  );
 }
 
 /** Redirect logged-in users who land on /login or /signup to their dashboard */
@@ -79,9 +84,42 @@ function DoctorGate({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+const PAGE_TITLES: Record<string, string> = {
+  "/":                    "NeoHomeo — AI-Powered Homeopathic Care",
+  "/login":               "Login — NeoHomeo",
+  "/signup":              "Sign Up — NeoHomeo",
+  "/forgot-password":     "Reset Password — NeoHomeo",
+  "/dashboard":           "My Dashboard — NeoHomeo",
+  "/assessment":          "Dr. Neo Assessment — NeoHomeo",
+  "/onboarding/patient":  "Complete Your Profile — NeoHomeo",
+  "/apply":               "Apply as a Doctor — NeoHomeo",
+  "/doctor":              "Doctor Dashboard — NeoHomeo",
+  "/admin":               "Admin Dashboard — NeoHomeo",
+  "/admin/login":         "Admin Login — NeoHomeo",
+};
+
+function PageTitleSetter() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    const exact = PAGE_TITLES[pathname];
+    if (exact) {
+      document.title = exact;
+      return;
+    }
+    // dynamic routes like /doctors/:id
+    if (pathname.startsWith("/doctors/")) {
+      document.title = "Doctor Profile — NeoHomeo";
+    } else {
+      document.title = "NeoHomeo — AI-Powered Homeopathic Care";
+    }
+  }, [pathname]);
+  return null;
+}
+
 export default function App() {
   return (
     <Routes>
+      <Route path="*" element={<PageTitleSetter />} />
       <Route path="/" element={<Landing />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
 

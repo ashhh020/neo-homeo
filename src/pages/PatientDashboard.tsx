@@ -17,6 +17,7 @@ import {
   savePatientOnboarding,
   updateAppointmentStatus,
   type AppointmentRow,
+  type AppointmentDoctor,
   type AssessmentRecord,
   type DoctorRow,
   type PatientDetails,
@@ -163,17 +164,18 @@ export default function PatientDashboard() {
   /** Step 2 — payment succeeded, create appointment */
   async function handlePaymentSuccess(paymentId: string) {
     if (!user || !paymentTarget) return;
+    const doc = paymentTarget;
     setPaymentTarget(null);
-    setBookingId(paymentTarget.id);
+    setBookingId(doc.id); // shows "Confirming…" overlay
     try {
       await bookAppointment({
         patientId: user.id,
-        doctorId: paymentTarget.id,
+        doctorId: doc.id,
         notes: `Payment ID: ${paymentId}`,
       });
       const appts = await listPatientAppointments(user.id);
       setAppointments(appts);
-      toast(`Payment successful! Appointment requested with ${paymentTarget.full_name}.`);
+      toast(`Payment successful! Appointment requested with ${doc.full_name}.`);
       setTab("appointments");
     } catch (e) {
       toast(e instanceof Error ? e.message : "Payment done but booking failed — contact support", "error");
@@ -450,14 +452,14 @@ export default function PatientDashboard() {
                     <div className="flex-1 min-w-0 space-y-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-semibold text-teal-950">
-                          {(appt.doctor as { full_name?: string })?.full_name ?? "Doctor"}
+                          {(appt.doctor as AppointmentDoctor | undefined)?.full_name ?? "Doctor"}
                         </h3>
                         <span className={`text-[10px] px-2 py-0.5 rounded-full border font-semibold ${STATUS_STYLES[appt.status]}`}>
                           {appt.status}
                         </span>
                       </div>
                       <p className="text-sm text-teal-800/70">
-                        {(appt.doctor as { specialization?: string })?.specialization ?? ""}
+                        {(appt.doctor as AppointmentDoctor | undefined)?.specialization ?? ""}
                       </p>
                       {appt.scheduled_at && (
                         <p className="text-xs text-teal-800/60">
@@ -500,7 +502,7 @@ export default function PatientDashboard() {
                           <button
                             onClick={() => setReviewTarget({
                               doctorId: appt.doctor_id!,
-                              doctorName: (appt.doctor as { full_name?: string })?.full_name ?? "Doctor",
+                              doctorName: (appt.doctor as AppointmentDoctor | undefined)?.full_name ?? "Doctor",
                             })}
                             className="text-xs font-semibold text-amber-600 hover:text-amber-800 underline"
                           >
@@ -693,6 +695,14 @@ export default function PatientDashboard() {
           doctorName={reviewTarget.doctorName}
           onClose={() => setReviewTarget(null)}
         />
+      )}
+
+      {/* Booking in-progress overlay (shown after payment, while API call runs) */}
+      {bookingId && !paymentTarget && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-teal-950/40 backdrop-blur-sm gap-4">
+          <div className="w-12 h-12 border-3 border-white border-t-transparent rounded-full animate-spin" />
+          <p className="text-white font-semibold text-lg">Confirming your appointment…</p>
+        </div>
       )}
 
       {/* Payment modal — opens before booking */}

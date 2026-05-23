@@ -430,6 +430,18 @@ export async function notifyDoctorOfDecision(
 
 export type AppointmentStatus = "pending" | "confirmed" | "cancelled" | "completed";
 
+export type AppointmentDoctor = {
+  full_name: string;
+  specialization: string;
+  photo_url: string | null;
+  consultation_fee: number;
+};
+
+export type AppointmentPatient = {
+  full_name: string | null;
+  email: string | null;
+};
+
 export type AppointmentRow = {
   id: string;
   patient_id: string;
@@ -440,9 +452,9 @@ export type AppointmentRow = {
   calendly_event_uri: string | null;
   created_at: string;
   updated_at: string;
-  // joined
-  doctor?: Pick<DoctorRow, "full_name" | "specialization" | "photo_url" | "consultation_fee">;
-  patient?: Pick<Profile, "full_name" | "email">;
+  // joined via PostgREST — always use these types, never cast inline
+  doctor?: AppointmentDoctor | null;
+  patient?: AppointmentPatient | null;
 };
 
 export async function bookAppointment(input: {
@@ -594,6 +606,12 @@ export async function markNotificationsRead(userId: string): Promise<void> {
   if (!isSupabaseConfigured()) return;
   const sb = getSupabase();
   await sb.from("notifications").update({ read: true }).eq("user_id", userId).eq("read", false);
+}
+
+export async function deleteAllNotifications(userId: string): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const sb = getSupabase();
+  await sb.from("notifications").delete().eq("user_id", userId);
 }
 
 // ── Reviews ───────────────────────────────────────────────────────────

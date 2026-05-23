@@ -2,13 +2,20 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { getSupabase, isSupabaseConfigured } from "../lib/supabase";
-import { listNotifications, markNotificationsRead, type NotificationRow } from "../lib/api";
+import {
+  listNotifications,
+  markNotificationsRead,
+  deleteAllNotifications,
+  type NotificationRow,
+} from "../lib/api";
 
 export function NotificationBell({ userId }: { userId: string }) {
   const [notes, setNotes] = useState<NotificationRow[]>([]);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  // Prevent markRead firing multiple times per open session
+  const markedRef = useRef(false);
 
   const unread = notes.filter((n) => !n.read).length;
 
@@ -40,9 +47,15 @@ export function NotificationBell({ userId }: { userId: string }) {
     return () => { void sb.removeChannel(channel); };
   }, [userId]);
 
-  // Mark all read when panel opens
+  // Reset markRead guard each time panel opens
   useEffect(() => {
-    if (open && unread > 0) {
+    if (open) markedRef.current = false;
+  }, [open]);
+
+  // Mark all read — fires at most once per open
+  useEffect(() => {
+    if (open && unread > 0 && !markedRef.current) {
+      markedRef.current = true;
       void markNotificationsRead(userId).then(() =>
         setNotes((prev) => prev.map((n) => ({ ...n, read: true })))
       );
@@ -61,6 +74,13 @@ export function NotificationBell({ userId }: { userId: string }) {
   function handleNotificationClick(n: NotificationRow) {
     setOpen(false);
     if (n.link) navigate(n.link);
+  }
+
+  async function handleClearAll() {
+    setNotes([]);
+    setOpen(false);
+    // Persist to DB — best-effort, local state already cleared
+    await deleteAllNotifications(userId).catch(() => {});
   }
 
   return (
@@ -143,11 +163,8 @@ export function NotificationBell({ userId }: { userId: string }) {
             {notes.length > 0 && (
               <div className="px-4 py-2 border-t border-teal-50 text-center">
                 <button
-                  onClick={() => {
-                    setNotes([]);
-                    setOpen(false);
-                  }}
-                  className="text-xs text-teal-800/40 hover:text-teal-800/70 transition"
+                  onClick={() => void handleClearAll()}
+                  className="text-xs text-teal-800/40 hover:text-rose-500 transition"
                 >
                   Clear all
                 </button>

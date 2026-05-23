@@ -12,6 +12,7 @@ import {
   updateDoctorProfile,
   uploadDoctorPhoto,
   type AppointmentRow,
+  type AppointmentPatient,
   type AppointmentStatus,
   type DoctorRow,
 } from "../lib/api";
@@ -283,7 +284,7 @@ export default function DoctorDashboard() {
             ) : (
               <ul className="space-y-3">
                 {appointments.map((appt) => {
-                  const patient = appt.patient as { full_name?: string; email?: string } | undefined;
+                  const patient = appt.patient as AppointmentPatient | undefined;
                   return (
                     <motion.li key={appt.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
                       className="glass-panel p-5 flex flex-wrap gap-4 items-start">
