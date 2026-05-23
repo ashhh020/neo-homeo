@@ -5,7 +5,7 @@ export function Blobs() {
     <>
       {/* primary large orbs */}
       <div className="gradient-blob orb-drift top-[-18%] left-[-10%] w-[62%] h-[62%] bg-teal-200" />
-      <div className="gradient-blob orb-drift-reverse bottom-[-14%] right-[-8%] w-[55%] h-[55%] bg-blue-200" />
+      <div className="gradient-blob orb-drift-reverse bottom-0 right-[-8%] w-[55%] h-[55%] bg-blue-200" />
       {/* accent orbs */}
       <div className="gradient-blob animate-float-slow top-[35%] right-[5%] w-[28%] h-[28%] bg-cyan-100 opacity-50" />
       <div className="gradient-blob animate-float top-[60%] left-[8%] w-[22%] h-[22%] bg-violet-100 opacity-40" />
@@ -30,7 +30,7 @@ export function PageShell({
   className?: string;
 }) {
   return (
-    <div className={`relative min-h-screen bg-[#F2F4F7] text-teal-950 overflow-hidden ${className}`}>
+    <div className={`relative bg-[#F2F4F7] text-teal-950 overflow-x-hidden ${className}`}>
       <Blobs />
       <div className="relative z-10">{children}</div>
     </div>
