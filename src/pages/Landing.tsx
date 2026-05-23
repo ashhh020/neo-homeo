@@ -229,12 +229,12 @@ export default function Landing() {
           {/* Emerald orb bottom-center */}
           <div className="absolute bottom-0 left-1/3 w-[360px] h-[360px] rounded-full bg-emerald-200/30 blur-3xl pointer-events-none orb-drift-reverse" />
 
-          {/* ── Doctor image — full-bleed, shifted 20% right ── */}
+          {/* ── Doctor image — starts below navbar, shifted 20% right ── */}
           <motion.div
             initial={{ opacity: 0, scale: 1.04 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute inset-0 flex items-end justify-end pointer-events-none select-none"
+            className="absolute bottom-0 top-20 right-0 left-0 flex items-end justify-end pointer-events-none select-none"
           >
             <img
               src="/hero-doctors.png"
@@ -242,7 +242,7 @@ export default function Landing() {
               aria-hidden
               draggable={false}
               className="h-full w-auto max-w-none object-cover object-bottom"
-              style={{ maxHeight: "100%", transform: "translateX(20%)" }}
+              style={{ transform: "translateX(20%)" }}
             />
             {/* Bottom fade — site teal palette */}
             <div
@@ -652,8 +652,8 @@ export default function Landing() {
           </div>
           <div>
             <p className="font-bold text-teal-900 mb-3">Contact</p>
-            <p>care@neohomeo.com</p>
-            <p className="mt-1">+91 80 4620 4410</p>
+            <p>connect@neohomeo.com</p>
+            <p className="mt-1">+91 97046 40098</p>
             <div className="flex gap-3 mt-3">
               {["𝕏", "in", "IG"].map((icon) => (
                 <div key={icon} className="w-8 h-8 rounded-full bg-teal-50 border border-teal-100 flex items-center justify-center text-xs font-bold cursor-pointer hover:bg-teal-100 transition">
