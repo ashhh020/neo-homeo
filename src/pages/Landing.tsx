@@ -212,120 +212,110 @@ export default function Landing() {
         )}
       </header>
 
-      <main className="pt-28 pb-24 px-4 max-w-6xl mx-auto space-y-28">
+      {/* ── HERO — full-width, outside the constrained main ── */}
+      <section ref={heroRef} className="relative overflow-hidden min-h-[92vh] flex items-center">
 
-        {/* ── HERO ── */}
-        <section ref={heroRef} className="-mx-4 -mt-28 relative overflow-hidden min-h-[92vh] flex items-center">
+        {/* Background */}
+        <div
+          className="absolute inset-0"
+          style={{ background: "linear-gradient(135deg, #ecfdf5 0%, #f0fdfa 35%, #e0f2fe 65%, #eff6ff 100%)" }}
+        />
+        {/* Soft teal orb top-left */}
+        <div className="absolute -top-20 -left-20 w-[480px] h-[480px] rounded-full bg-teal-200/40 blur-3xl pointer-events-none orb-drift" />
+        {/* Emerald orb bottom-center */}
+        <div className="absolute bottom-0 left-1/3 w-[360px] h-[360px] rounded-full bg-emerald-200/30 blur-3xl pointer-events-none orb-drift-reverse" />
 
-          {/* ── Background: matches site hero-gradient palette ── */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background: "linear-gradient(135deg, #ecfdf5 0%, #f0fdfa 35%, #e0f2fe 65%, #eff6ff 100%)",
-            }}
+        {/* Doctor image — starts below navbar, shifted 20% right */}
+        <motion.div
+          initial={{ opacity: 0, scale: 1.04 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
+          className="absolute bottom-0 top-20 right-0 left-0 flex items-end justify-end pointer-events-none select-none"
+        >
+          <img
+            src="/hero-doctors.png"
+            alt=""
+            aria-hidden
+            draggable={false}
+            className="h-full w-auto max-w-none object-cover object-bottom"
+            style={{ transform: "translateX(20%)" }}
           />
-          {/* Soft teal orb top-left */}
-          <div className="absolute -top-20 -left-20 w-[480px] h-[480px] rounded-full bg-teal-200/40 blur-3xl pointer-events-none orb-drift" />
-          {/* Emerald orb bottom-center */}
-          <div className="absolute bottom-0 left-1/3 w-[360px] h-[360px] rounded-full bg-emerald-200/30 blur-3xl pointer-events-none orb-drift-reverse" />
+          {/* Bottom fade */}
+          <div
+            className="absolute bottom-0 inset-x-0 h-56 pointer-events-none"
+            style={{ background: "linear-gradient(to top, #ecfdf5 0%, rgba(236,253,245,0.6) 50%, transparent 100%)" }}
+          />
+          {/* Left fade — keeps text legible */}
+          <div
+            className="absolute inset-y-0 left-0 w-[55%] pointer-events-none"
+            style={{ background: "linear-gradient(to right, #f0fdfa 30%, rgba(240,253,250,0.85) 60%, transparent 100%)" }}
+          />
+        </motion.div>
 
-          {/* ── Doctor image — starts below navbar, shifted 20% right ── */}
-          <motion.div
-            initial={{ opacity: 0, scale: 1.04 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute bottom-0 top-20 right-0 left-0 flex items-end justify-end pointer-events-none select-none"
+        {/* NeoHomeo watermark */}
+        <div className="absolute bottom-0 inset-x-0 flex justify-center select-none pointer-events-none overflow-hidden">
+          <span
+            className="text-[160px] md:text-[220px] font-black leading-none tracking-tight"
+            style={{
+              background: "linear-gradient(135deg, rgba(13,148,136,0.18) 0%, rgba(6,182,212,0.12) 40%, rgba(139,92,246,0.08) 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
           >
-            <img
-              src="/hero-doctors.png"
-              alt=""
-              aria-hidden
-              draggable={false}
-              className="h-full w-auto max-w-none object-cover object-bottom"
-              style={{ transform: "translateX(20%)" }}
-            />
-            {/* Bottom fade — site teal palette */}
-            <div
-              className="absolute bottom-0 inset-x-0 h-56 pointer-events-none"
-              style={{ background: "linear-gradient(to top, #ecfdf5 0%, rgba(236,253,245,0.6) 50%, transparent 100%)" }}
-            />
-            {/* Left fade — keeps text legible */}
-            <div
-              className="absolute inset-y-0 left-0 w-[55%] pointer-events-none"
-              style={{ background: "linear-gradient(to right, #f0fdfa 30%, rgba(240,253,250,0.85) 60%, transparent 100%)" }}
-            />
-          </motion.div>
+            NeoHomeo
+          </span>
+        </div>
 
-          {/* ── NeoHomeo highlight watermark ── */}
-          <div className="absolute bottom-0 inset-x-0 flex justify-center select-none pointer-events-none overflow-hidden">
-            <span
-              className="text-[160px] md:text-[220px] font-black leading-none tracking-tight"
-              style={{
-                background: "linear-gradient(135deg, rgba(13,148,136,0.18) 0%, rgba(6,182,212,0.12) 40%, rgba(139,92,246,0.08) 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-              }}
+        {/* Content */}
+        <motion.div
+          style={{ y: heroY, opacity: heroOpacity }}
+          className="relative w-full max-w-6xl mx-auto px-8 pt-36 pb-28"
+        >
+          <div className="max-w-xl space-y-8">
+
+            <motion.h1 className="space-y-0 leading-[1.05]">
+              {["Homeopathic.", "Anywhere.", "Anytime."].map((word, i) => (
+                <motion.span
+                  key={word}
+                  initial={{ opacity: 0, x: -24 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.55, delay: 0.08 + i * 0.1 }}
+                  className="block text-5xl md:text-[68px] font-black text-teal-950 tracking-tight"
+                >
+                  {word}
+                </motion.span>
+              ))}
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.38 }}
+              className="text-base md:text-lg text-teal-900/65 leading-relaxed"
             >
-              NeoHomeo
-            </span>
+              Connect with certified homeopathic doctors through AI-assisted consultations, manage your health records, and receive personalized remedies — all from the comfort of your home.
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.5 }}
+              className="flex flex-wrap gap-3"
+            >
+              <Link to="/assessment"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white px-8 py-4 rounded-full text-base font-bold shadow-xl shadow-teal-500/25 transition"
+              >
+                Start Consultation
+              </Link>
+              <Link to="/apply"
+                className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm hover:bg-white border border-teal-200 text-teal-950 px-8 py-4 rounded-full text-base font-bold shadow-sm transition"
+              >
+                For Doctors
+              </Link>
+            </motion.div>
+
           </div>
+        </motion.div>
+      </section>
 
-          {/* ── Content ── */}
-          <motion.div
-            style={{ y: heroY, opacity: heroOpacity }}
-            className="relative w-full max-w-6xl mx-auto px-4 pt-36 pb-28"
-          >
-            <div className="max-w-xl space-y-8">
-
-              <motion.span
-                initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }}
-                className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.3em] text-teal-700 bg-white/70 border border-teal-200/70 px-4 py-2 rounded-full shadow-sm backdrop-blur-sm"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
-                AI-Powered Homeopathy
-              </motion.span>
-
-              <motion.h1 className="space-y-0 leading-[1.05]">
-                {["Homeopathic.", "Anywhere.", "Anytime."].map((word, i) => (
-                  <motion.span
-                    key={word}
-                    initial={{ opacity: 0, x: -24 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.55, delay: 0.08 + i * 0.1 }}
-                    className="block text-5xl md:text-[68px] font-black text-teal-950 tracking-tight"
-                  >
-                    {word}
-                  </motion.span>
-                ))}
-              </motion.h1>
-
-              <motion.p
-                initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.38 }}
-                className="text-base md:text-lg text-teal-900/65 leading-relaxed"
-              >
-                Connect with certified homeopathic doctors through AI-assisted consultations, manage your health records, and receive personalized remedies — all from the comfort of your home.
-              </motion.p>
-
-              <motion.div
-                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.5 }}
-                className="flex flex-wrap gap-3"
-              >
-                <Link to="/assessment"
-                  className="inline-flex items-center gap-2 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white px-8 py-4 rounded-full text-base font-bold shadow-xl shadow-teal-500/25 transition"
-                >
-                  Start Consultation
-                </Link>
-                <Link to="/apply"
-                  className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm hover:bg-white border border-teal-200 text-teal-950 px-8 py-4 rounded-full text-base font-bold shadow-sm transition"
-                >
-                  For Doctors
-                </Link>
-              </motion.div>
-
-            </div>
-          </motion.div>
-        </section>
+      <main className="pb-24 px-4 max-w-6xl mx-auto space-y-28">
 
         {/* ── LUMA EVENT ── */}
         <motion.section
