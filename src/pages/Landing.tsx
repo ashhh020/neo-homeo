@@ -1,8 +1,7 @@
-import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
-import React, { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { NeoLogo, PageShell } from "../components/Shell";
-import { listApprovedDoctors, type DoctorRow } from "../lib/api";
 
 /* ── data ── */
 const steps = [
@@ -79,89 +78,18 @@ function AnimateHeight({ open, children }: { open: boolean; children: React.Reac
   );
 }
 
-/* ── Luma Event Popup ── */
-function LumaPopup({ onClose }: { onClose: () => void }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-teal-950/50 backdrop-blur-sm px-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-    >
-      <motion.div
-        initial={{ scale: 0.93, opacity: 0, y: 20 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.93, opacity: 0, y: 10 }}
-        transition={{ type: "spring", damping: 22, stiffness: 280 }}
-        className="w-full max-w-[640px] bg-white rounded-3xl shadow-2xl overflow-hidden"
-      >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-teal-50">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-teal-700">Upcoming event</p>
-            <p className="text-sm font-semibold text-teal-950 mt-0.5">Join us on NeoHomeo</p>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-teal-50 flex items-center justify-center text-teal-600 hover:bg-teal-100 transition text-sm font-bold"
-            aria-label="Close"
-          >
-            ✕
-          </button>
-        </div>
-        <div className="p-4">
-          <iframe
-            src="https://luma.com/embed/event/evt-nDJmP0tkyKT0r5Q/simple"
-            width="100%"
-            height="450"
-            frameBorder="0"
-            style={{ border: "1px solid #bfcbda88", borderRadius: 4 }}
-            allow="fullscreen; payment"
-            aria-hidden={false}
-            tabIndex={0}
-            title="NeoHomeo Event"
-          />
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-}
-
 /* ── main ── */
 export default function Landing() {
-  const [doctors, setDoctors] = useState<DoctorRow[]>([]);
   const [tIndex, setTIndex] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [lumaOpen, setLumaOpen] = useState(false);
-  const heroRef = useRef<HTMLDivElement>(null);
-  const { scrollY } = useScroll();
-  const heroY = useTransform(scrollY, [0, 400], [0, 60]);
-  const heroOpacity = useTransform(scrollY, [0, 300], [1, 0.7]);
 
-  useEffect(() => { void listApprovedDoctors().then(setDoctors); }, []);
   useEffect(() => {
     const id = setInterval(() => setTIndex((i) => (i + 1) % testimonials.length), 6000);
     return () => clearInterval(id);
   }, []);
 
-  // Auto-show Luma popup after 1.5 s (only once per session)
-  useEffect(() => {
-    if (sessionStorage.getItem("luma_dismissed")) return;
-    const t = setTimeout(() => setLumaOpen(true), 1500);
-    return () => clearTimeout(t);
-  }, []);
-
-  function closeLuma() {
-    setLumaOpen(false);
-    sessionStorage.setItem("luma_dismissed", "1");
-  }
-
   return (
     <PageShell className="hero-gradient">
-      {/* ── Luma popup ── */}
-      <AnimatePresence>
-        {lumaOpen && <LumaPopup onClose={closeLuma} />}
-      </AnimatePresence>
 
       {/* ── navbar ── */}
       <header className="fixed top-4 inset-x-0 z-50 flex justify-center px-4">
@@ -174,7 +102,7 @@ export default function Landing() {
           <Link to="/"><NeoLogo compact /></Link>
 
           <div className="hidden md:flex gap-7 text-xs font-bold text-teal-800 uppercase tracking-widest">
-            {[["#treatments", "Treatments"], ["#doctors", "Doctors"], ["#how", "How it works"], ["#neo", "Dr. Neo"], ["#faq", "FAQ"]].map(([href, label]) => (
+            {[["#treatments", "Treatments"], ["#how", "How it works"], ["#neo", "Dr. Neo"], ["#faq", "FAQ"]].map(([href, label]) => (
               <a key={href} href={href} className="hover:text-teal-600 transition">{label}</a>
             ))}
           </div>
@@ -198,7 +126,7 @@ export default function Landing() {
             initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
             className="absolute top-16 left-4 right-4 bg-white/95 backdrop-blur rounded-3xl border border-teal-100 shadow-xl p-4 flex flex-col gap-2"
           >
-            {[["#treatments", "Treatments"], ["#doctors", "Doctors"], ["#how", "How it works"], ["#neo", "Dr. Neo"], ["#faq", "FAQ"]].map(([href, label]) => (
+            {[["#treatments", "Treatments"], ["#how", "How it works"], ["#neo", "Dr. Neo"], ["#faq", "FAQ"]].map(([href, label]) => (
               <a key={href} href={href} onClick={() => setMobileMenuOpen(false)}
                 className="text-sm font-semibold text-teal-900 px-4 py-2 rounded-2xl hover:bg-teal-50">
                 {label}
@@ -213,17 +141,17 @@ export default function Landing() {
       </header>
 
       {/* ── HERO — full-width, outside the constrained main ── */}
-      <section ref={heroRef} className="relative overflow-hidden min-h-[92vh] flex items-center">
+      <section className="relative overflow-hidden min-h-[92vh] flex items-center">
 
         {/* Background */}
         <div
           className="absolute inset-0"
           style={{ background: "linear-gradient(135deg, #ecfdf5 0%, #f0fdfa 35%, #e0f2fe 65%, #eff6ff 100%)" }}
         />
-        {/* Soft teal orb top-left */}
-        <div className="absolute -top-20 -left-20 w-[480px] h-[480px] rounded-full bg-teal-200/40 blur-3xl pointer-events-none orb-drift" />
-        {/* Emerald orb bottom-center */}
-        <div className="absolute bottom-0 left-1/3 w-[360px] h-[360px] rounded-full bg-emerald-200/30 blur-3xl pointer-events-none orb-drift-reverse" />
+        {/* Soft teal orb top-left — static, no animation */}
+        <div className="absolute -top-20 -left-20 w-[480px] h-[480px] rounded-full bg-teal-200/30 blur-3xl pointer-events-none" />
+        {/* Emerald orb bottom-center — static */}
+        <div className="absolute bottom-0 left-1/3 w-[360px] h-[360px] rounded-full bg-emerald-200/20 blur-3xl pointer-events-none" />
 
         {/* Doctor image — starts below navbar, shifted 20% right */}
         <motion.div
@@ -268,10 +196,7 @@ export default function Landing() {
         </div>
 
         {/* Content */}
-        <motion.div
-          style={{ y: heroY, opacity: heroOpacity }}
-          className="relative w-full max-w-6xl mx-auto px-8 pt-36 pb-28"
-        >
+        <div className="relative w-full max-w-6xl mx-auto px-8 pt-36 pb-28">
           <div className="max-w-xl space-y-8">
 
             <motion.h1 className="space-y-0 leading-[1.05]">
@@ -305,46 +230,33 @@ export default function Landing() {
                 Start Consultation
               </Link>
               <Link to="/apply"
-                className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm hover:bg-white border border-teal-200 text-teal-950 px-8 py-4 rounded-full text-base font-bold shadow-sm transition"
+                className="inline-flex items-center gap-2 bg-white/90 hover:bg-white border border-teal-200 text-teal-950 px-8 py-4 rounded-full text-base font-bold shadow-sm transition"
               >
                 For Doctors
               </Link>
             </motion.div>
 
+            {/* Trust badges */}
+            <motion.div
+              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.65 }}
+              className="flex flex-wrap gap-3 pt-1"
+            >
+              {[
+                { icon: "🩺", label: "10+ verified doctors" },
+                { icon: "📋", label: "100+ assessments done" },
+                { icon: "✦", label: "Free AI assessment" },
+              ].map((b) => (
+                <span key={b.label} className="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-800 bg-teal-50/80 border border-teal-100 px-3 py-1.5 rounded-full">
+                  <span>{b.icon}</span>{b.label}
+                </span>
+              ))}
+            </motion.div>
+
           </div>
-        </motion.div>
+        </div>
       </section>
 
       <main className="pb-24 px-4 max-w-6xl mx-auto space-y-28">
-
-        {/* ── LUMA EVENT ── */}
-        <motion.section
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-60px" }}
-          transition={{ duration: 0.5 }}
-          className="space-y-8"
-        >
-          <div className="text-center space-y-3">
-            <p className="text-xs uppercase tracking-[0.35em] text-teal-700/70 font-bold">Community</p>
-            <h2 className="text-4xl font-light text-teal-950">Join us at our next event</h2>
-            <p className="text-teal-900/65 max-w-xl mx-auto">Meet the team, ask questions, and be part of the NeoHomeo community.</p>
-          </div>
-          <div className="glass-panel p-4 md:p-6 flex justify-center overflow-hidden">
-            <iframe
-              src="https://luma.com/embed/event/evt-nDJmP0tkyKT0r5Q/simple"
-              width="600"
-              height="450"
-              frameBorder="0"
-              style={{ border: "1px solid #bfcbda88", borderRadius: 4, maxWidth: "100%" }}
-              allow="fullscreen; payment"
-              aria-hidden={false}
-              tabIndex={0}
-              title="NeoHomeo Event"
-              className="w-full"
-            />
-          </div>
-        </motion.section>
 
         {/* ── HOW IT WORKS ── */}
         <section id="how" className="space-y-10">
@@ -479,65 +391,7 @@ export default function Landing() {
           </motion.div>
         </section>
 
-        {/* ── DOCTORS ── */}
-        <section id="doctors" className="space-y-10">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-            <div>
-              <p className="text-xs uppercase tracking-[0.35em] text-teal-700/70 font-bold">Clinicians</p>
-              <h2 className="text-4xl font-light text-teal-950 mt-1">Verified doctors on NeoHomeo</h2>
-              <p className="text-teal-900/65 mt-2 max-w-xl">Profiles appear only after admin verification and document review.</p>
-            </div>
-            <Link to="/apply"
-              className="self-start text-sm font-bold bg-white border border-teal-100 px-5 py-2.5 rounded-full shadow-sm hover:bg-teal-50 transition"
-            >
-              Physician application →
-            </Link>
-          </div>
 
-          {doctors.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
-              className="glass-panel p-12 text-center space-y-3"
-            >
-              <p className="font-semibold text-teal-950">Verified doctor profiles appear here</p>
-              <p className="text-sm text-teal-900/65 max-w-sm mx-auto">Profiles are published after the clinical team approves applications.</p>
-              <Link to="/apply" className="inline-flex text-sm font-bold text-teal-600">Apply as a doctor →</Link>
-            </motion.div>
-          ) : (
-            <div className="grid md:grid-cols-2 gap-5">
-              {doctors.map((d, i) => (
-                <motion.div
-                  key={d.id}
-                  initial={{ opacity: 0, y: 14 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.08 }}
-                  whileHover={{ y: -3, boxShadow: "0 20px 40px rgba(13,148,136,0.15)" }}
-                  className="glass-panel p-6 flex gap-5"
-                >
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-100 to-cyan-100 border border-teal-50 overflow-hidden flex-shrink-0">
-                    {d.photo_url
-                      ? <img src={d.photo_url} alt="" className="w-full h-full object-cover" />
-                      : <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-teal-700">{d.full_name.slice(0, 1)}</div>}
-                  </div>
-                  <div className="flex-1 space-y-1">
-                    <div className="flex justify-between gap-2">
-                      <h3 className="font-bold text-teal-950">{d.full_name}</h3>
-                      <span className="text-sm text-amber-600 font-semibold">{Number(d.rating).toFixed(1)} / 5</span>
-                    </div>
-                    <p className="text-sm text-teal-800/70">{d.specialization}</p>
-                    <p className="text-xs text-teal-900/55">{d.experience_years}+ yrs · {d.languages.join(", ")}</p>
-                    <p className="text-sm font-bold text-teal-900">₹{d.consultation_fee} consultation</p>
-                    <div className="flex gap-3 pt-1">
-                      <Link to={`/doctors/${d.id}`} className="text-sm font-bold text-teal-600 hover:text-teal-800 transition">View profile →</Link>
-                      {d.calendly_url && <Link to={`/doctors/${d.id}`} className="text-sm font-semibold text-blue-600 hover:text-blue-800 transition">Book online</Link>}
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </section>
 
         {/* ── TESTIMONIALS ── */}
         <section className="space-y-8">
@@ -617,7 +471,7 @@ export default function Landing() {
       </main>
 
       {/* ── FOOTER ── */}
-      <footer className="border-t border-teal-100 bg-white/60 backdrop-blur-xl">
+      <footer className="border-t border-teal-100 bg-white/90">
         <div className="max-w-6xl mx-auto px-4 py-10 grid md:grid-cols-4 gap-8 text-sm text-teal-900/70">
           <div className="space-y-3">
             <NeoLogo compact />
@@ -634,22 +488,29 @@ export default function Landing() {
           <div>
             <p className="font-bold text-teal-900 mb-3">Policies</p>
             <ul className="space-y-2">
-              <li className="cursor-pointer hover:text-teal-700 transition">Privacy policy</li>
-              <li className="cursor-pointer hover:text-teal-700 transition">Terms of use</li>
-              <li className="cursor-pointer hover:text-teal-700 transition">Medical disclaimer</li>
-              <li className="cursor-pointer hover:text-teal-700 transition">Refund policy</li>
+              <li><Link to="/legal/privacy" className="hover:text-teal-700 transition">Privacy policy</Link></li>
+              <li><Link to="/legal/terms" className="hover:text-teal-700 transition">Terms of use</Link></li>
+              <li><Link to="/legal/disclaimer" className="hover:text-teal-700 transition">Medical disclaimer</Link></li>
+              <li><Link to="/legal/refund" className="hover:text-teal-700 transition">Refund policy</Link></li>
             </ul>
           </div>
           <div>
             <p className="font-bold text-teal-900 mb-3">Contact</p>
-            <p>connect@neohomeo.com</p>
-            <p className="mt-1">+91 97046 40098</p>
+            <a href="mailto:connect@neohomeo.com" className="hover:text-teal-700 transition">connect@neohomeo.com</a>
+            <p className="mt-1"><a href="tel:+919704640098" className="hover:text-teal-700 transition">+91 97046 40098</a></p>
             <div className="flex gap-3 mt-3">
-              {["𝕏", "in", "IG"].map((icon) => (
-                <div key={icon} className="w-8 h-8 rounded-full bg-teal-50 border border-teal-100 flex items-center justify-center text-xs font-bold cursor-pointer hover:bg-teal-100 transition">
-                  {icon}
-                </div>
-              ))}
+              <a href="https://x.com/neohomeo" target="_blank" rel="noopener noreferrer"
+                className="w-8 h-8 rounded-full bg-teal-50 border border-teal-100 flex items-center justify-center text-xs font-bold hover:bg-teal-100 transition" aria-label="X / Twitter">
+                𝕏
+              </a>
+              <a href="https://linkedin.com/company/neohomeo" target="_blank" rel="noopener noreferrer"
+                className="w-8 h-8 rounded-full bg-teal-50 border border-teal-100 flex items-center justify-center text-xs font-bold hover:bg-teal-100 transition" aria-label="LinkedIn">
+                in
+              </a>
+              <a href="https://instagram.com/neohomeo" target="_blank" rel="noopener noreferrer"
+                className="w-8 h-8 rounded-full bg-teal-50 border border-teal-100 flex items-center justify-center text-xs font-bold hover:bg-teal-100 transition" aria-label="Instagram">
+                IG
+              </a>
             </div>
           </div>
         </div>

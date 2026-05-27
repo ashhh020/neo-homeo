@@ -12,6 +12,7 @@ import AuthCallback from "./pages/AuthCallback";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
+import Legal from "./pages/Legal";
 
 // Lazy load heavy pages
 const PatientDashboard  = lazy(() => import("./pages/PatientDashboard"));
@@ -191,6 +192,9 @@ export default function App() {
           </SessionGate>
         }
       />
+
+      {/* Legal pages */}
+      <Route path="/legal/:slug" element={<Legal />} />
 
       <Route path="*" element={<NotFound />} />
     </Routes>

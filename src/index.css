@@ -20,11 +20,11 @@ body {
 }
 
 .glass-panel {
-  @apply bg-white/70 backdrop-blur-xl border border-white/80 shadow-glass rounded-3xl;
+  @apply bg-white/80 border border-white/90 shadow-glass rounded-3xl;
 }
 
 .glass-nav {
-  @apply backdrop-blur-md bg-white/40 border border-white/60 shadow-sm;
+  @apply backdrop-blur-sm bg-white/80 border border-white/60 shadow-sm;
 }
 
 .gradient-blob {
@@ -125,6 +125,4 @@ body {
 }
 .hero-gradient {
   background: linear-gradient(135deg, #ecfdf5, #f0fdfa, #eff6ff, #f5f3ff);
-  background-size: 300% 300%;
-  animation: hero-gradient 12s ease infinite;
 }
