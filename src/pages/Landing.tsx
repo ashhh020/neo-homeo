@@ -1,7 +1,51 @@
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { NeoLogo, PageShell } from "../components/Shell";
+
+/* ── Luma popup ── */
+function LumaPopup({ onClose }: { onClose: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.94, y: 16 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.94, y: 12 }}
+        transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-[640px] bg-white rounded-3xl shadow-2xl overflow-hidden"
+      >
+        {/* close button */}
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-black/10 hover:bg-black/20 flex items-center justify-center transition"
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M1 1l12 12M13 1L1 13" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        </button>
+        {/* responsive iframe wrapper — 600×450 aspect ratio */}
+        <div className="w-full" style={{ paddingBottom: "75%" /* 450/600 */, position: "relative" }}>
+          <iframe
+            src="https://luma.com/embed/event/evt-yWZrKEAoGAA9T4A/simple"
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none", borderRadius: "1.5rem" }}
+            allow="fullscreen; payment"
+            aria-hidden="false"
+            tabIndex={0}
+            title="NeoHomeo Event"
+          />
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
 
 /* ── data ── */
 const steps = [
@@ -82,14 +126,30 @@ function AnimateHeight({ open, children }: { open: boolean; children: React.Reac
 export default function Landing() {
   const [tIndex, setTIndex] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [lumaOpen, setLumaOpen] = useState(false);
+
+  function closeLuma() {
+    setLumaOpen(false);
+    sessionStorage.setItem("luma_dismissed", "1");
+  }
 
   useEffect(() => {
     const id = setInterval(() => setTIndex((i) => (i + 1) % testimonials.length), 6000);
     return () => clearInterval(id);
   }, []);
 
+  useEffect(() => {
+    if (sessionStorage.getItem("luma_dismissed")) return;
+    const t = setTimeout(() => setLumaOpen(true), 1500);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
     <PageShell className="hero-gradient">
+      {/* ── Luma popup ── */}
+      <AnimatePresence>
+        {lumaOpen && <LumaPopup onClose={closeLuma} />}
+      </AnimatePresence>
 
       {/* ── navbar ── */}
       <header className="fixed top-4 inset-x-0 z-50 flex justify-center px-4">
@@ -253,6 +313,25 @@ export default function Landing() {
             </motion.div>
 
           </div>
+        </div>
+      </section>
+
+      {/* ── Luma event section ── */}
+      <section className="w-full max-w-3xl mx-auto px-4 py-12">
+        <div className="text-center space-y-2 mb-6">
+          <p className="text-xs uppercase tracking-[0.35em] text-teal-700/70 font-bold">Upcoming</p>
+          <h2 className="text-3xl font-light text-teal-950">Join our next event</h2>
+        </div>
+        {/* responsive wrapper: 600×450 → 75% padding-bottom */}
+        <div className="relative w-full rounded-2xl overflow-hidden shadow-lg" style={{ paddingBottom: "min(450px, 75%)" }}>
+          <iframe
+            src="https://luma.com/embed/event/evt-yWZrKEAoGAA9T4A/simple"
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "1px solid #bfcbda88", borderRadius: "1rem" }}
+            allow="fullscreen; payment"
+            aria-hidden="false"
+            tabIndex={0}
+            title="NeoHomeo Event"
+          />
         </div>
       </section>
 
