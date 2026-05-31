@@ -22,6 +22,7 @@ const AdminDashboard    = lazy(() => import("./pages/AdminDashboard"));
 const DrNeo             = lazy(() => import("./pages/DrNeo"));
 const DoctorDashboard   = lazy(() => import("./pages/DoctorDashboard"));
 const DoctorProfile     = lazy(() => import("./pages/DoctorProfile"));
+const StudentPortal     = lazy(() => import("./pages/StudentPortal"));
 
 function Spinner() {
   return (
@@ -97,6 +98,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/doctor":              "Doctor Dashboard — NeoHomeo",
   "/admin":               "Admin Dashboard — NeoHomeo",
   "/admin/login":         "Admin Login — NeoHomeo",
+  "/student":             "Student Portal — NeoHomeo",
 };
 
 function PageTitleSetter() {
@@ -163,7 +165,8 @@ export default function App() {
         }
       />
 
-      {/* Public doctor pages */}
+      {/* Public pages */}
+      <Route path="/student" element={<LazyBoundary><StudentPortal /></LazyBoundary>} />
       <Route path="/apply" element={<LazyBoundary><DoctorApply /></LazyBoundary>} />
       <Route path="/doctors/:id" element={<LazyBoundary><DoctorProfile /></LazyBoundary>} />
       <Route path="/doctor-signup" element={<Navigate to="/apply" replace />} />
