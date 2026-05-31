@@ -93,7 +93,8 @@ export default function StudentPortal() {
   // Medicine browsing
   const [activeMedicine, setActiveMedicine] = useState<Medicine | null>(null);
   const [tab, setTab] = useState<StudentTab>("chat");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);       // mobile drawer
+  const [sidebarVisible, setSidebarVisible] = useState(true);  // desktop toggle
   const medicineCache = useRef(new Map<string, MedicineData>());
 
   // Chat
@@ -181,7 +182,20 @@ export default function StudentPortal() {
           Medicines
         </button>
 
-        <div className="hidden md:flex ml-auto items-center gap-3">
+        {/* Desktop: sidebar toggle + auth links */}
+        <div className="hidden md:flex ml-auto items-center gap-2">
+          <button
+            onClick={() => setSidebarVisible((v) => !v)}
+            title={sidebarVisible ? "Hide sidebar" : "Show sidebar"}
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-teal-500 hover:bg-teal-50 hover:text-teal-700 transition"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              {sidebarVisible
+                ? <><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></>
+                : <><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M14 9l3 3-3 3"/></>
+              }
+            </svg>
+          </button>
           <Link
             to="/login"
             className="text-sm font-semibold text-teal-800 px-4 py-2 rounded-full hover:bg-white/70 transition"
@@ -200,25 +214,58 @@ export default function StudentPortal() {
       {/* ── Body ── */}
       <div className="flex flex-1 overflow-hidden">
 
-        {/* ── Sidebar (desktop always visible, mobile is drawer) ── */}
-        <div className="hidden md:block w-64 flex-shrink-0 border-r border-teal-100 h-full overflow-hidden">
-          <MedicineTree
-            medicines={MEDICINES}
-            activeMedicine={activeMedicine}
-            onSelect={handleSelectMedicine}
-            isOpen={false}
-            onClose={() => {}}
-          />
-        </div>
+        {/* ── Desktop sidebar — collapsible ── */}
+        <AnimatePresence initial={false}>
+          {sidebarVisible && (
+            <motion.div
+              key="desktop-sidebar"
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 256, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ duration: 0.22, ease: "easeInOut" }}
+              className="hidden md:flex flex-shrink-0 border-r border-teal-100 h-full overflow-hidden"
+              style={{ minWidth: 0 }}
+            >
+              <div className="w-64 h-full flex-shrink-0">
+                <MedicineTree
+                  medicines={MEDICINES}
+                  activeMedicine={activeMedicine}
+                  onSelect={handleSelectMedicine}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* Mobile drawer */}
-        <MedicineTree
-          medicines={MEDICINES}
-          activeMedicine={activeMedicine}
-          onSelect={handleSelectMedicine}
-          isOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-        />
+        {/* ── Mobile drawer overlay ── */}
+        <AnimatePresence>
+          {sidebarOpen && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setSidebarOpen(false)}
+                className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px] md:hidden"
+              />
+              <motion.div
+                initial={{ x: -280 }}
+                animate={{ x: 0 }}
+                exit={{ x: -280 }}
+                transition={{ type: "spring", damping: 28, stiffness: 280 }}
+                className="fixed inset-y-0 left-0 z-50 w-72 md:hidden shadow-2xl"
+              >
+                <MedicineTree
+                  medicines={MEDICINES}
+                  activeMedicine={activeMedicine}
+                  onSelect={handleSelectMedicine}
+                  onClose={() => setSidebarOpen(false)}
+                  isMobileDrawer
+                />
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
 
         {/* ── Main content ── */}
         <div className="flex-1 flex flex-col overflow-hidden min-w-0">

@@ -6,8 +6,8 @@ interface Props {
   medicines: Medicine[];
   activeMedicine: Medicine | null;
   onSelect: (medicine: Medicine) => void;
-  isOpen: boolean;    // mobile drawer open state
-  onClose: () => void;
+  onClose?: () => void;       // only needed in mobile drawer mode
+  isMobileDrawer?: boolean;
 }
 
 function ChevronIcon({ open }: { open: boolean }) {
@@ -30,19 +30,13 @@ function ChevronIcon({ open }: { open: boolean }) {
   );
 }
 
-function SidebarInner({
+export function MedicineTree({
   medicines,
   activeMedicine,
   onSelect,
   onClose,
-  isMobileDrawer,
-}: {
-  medicines: Medicine[];
-  activeMedicine: Medicine | null;
-  onSelect: (m: Medicine) => void;
-  onClose: () => void;
-  isMobileDrawer: boolean;
-}) {
+  isMobileDrawer = false,
+}: Props) {
   const [expandedLetters, setExpandedLetters] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
 
@@ -61,7 +55,6 @@ function SidebarInner({
     return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
   }, [medicines, search]);
 
-  // When searching, treat all matching letters as expanded
   const isExpanded = (letter: string) =>
     search.trim() ? true : expandedLetters.has(letter);
 
@@ -76,7 +69,7 @@ function SidebarInner({
 
   function handleSelect(m: Medicine) {
     onSelect(m);
-    if (isMobileDrawer) onClose();
+    onClose?.();
   }
 
   return (
@@ -84,19 +77,20 @@ function SidebarInner({
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-teal-100">
         <div className="flex items-center gap-2">
-          {/* Folder icon */}
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-teal-600">
-            <path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"
-              fill="currentColor" opacity="0.2" stroke="currentColor" strokeWidth="1.5"/>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-teal-400">
+            <path
+              d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"
+              fill="currentColor" opacity="0.25" stroke="currentColor" strokeWidth="1.5"
+            />
           </svg>
           <span className="text-xs font-bold uppercase tracking-widest text-teal-800">
             Materia Medica
           </span>
         </div>
-        {isMobileDrawer && (
+        {isMobileDrawer && onClose && (
           <button
             onClick={onClose}
-            className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-teal-50 text-teal-600 transition"
+            className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-teal-50 text-teal-500 transition"
           >
             <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
               <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
@@ -108,7 +102,7 @@ function SidebarInner({
       {/* Search */}
       <div className="px-3 py-2 border-b border-teal-50">
         <div className="flex items-center gap-2 bg-teal-50/60 border border-teal-100 rounded-xl px-3 py-1.5">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="text-teal-500 flex-shrink-0">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="text-teal-400 flex-shrink-0">
             <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
             <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
           </svg>
@@ -120,7 +114,7 @@ function SidebarInner({
             className="flex-1 text-xs bg-transparent outline-none text-teal-900 placeholder-teal-400 min-w-0"
           />
           {search && (
-            <button onClick={() => setSearch("")} className="text-teal-400 hover:text-teal-600 transition">
+            <button onClick={() => setSearch("")} className="text-teal-400 hover:text-teal-600 transition flex-shrink-0">
               <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
                 <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
               </svg>
@@ -140,12 +134,12 @@ function SidebarInner({
               <button
                 onClick={() => toggleLetter(letter)}
                 className="w-full flex items-center gap-1.5 px-3 py-1.5 hover:bg-teal-50 transition rounded-lg mx-1 text-left group"
+                style={{ width: "calc(100% - 8px)" }}
               >
                 <ChevronIcon open={isExpanded(letter)} />
-                {/* Folder SVG */}
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" className="text-amber-500 flex-shrink-0">
                   <path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"
-                    fill="currentColor" opacity="0.8"/>
+                    fill="currentColor" opacity="0.85"/>
                 </svg>
                 <span className="text-xs font-bold text-teal-800 flex-1">{letter}</span>
                 <span className="text-[10px] text-teal-400 font-medium group-hover:text-teal-600 transition">
@@ -169,14 +163,15 @@ function SidebarInner({
                         <button
                           key={m.path}
                           onClick={() => handleSelect(m)}
-                          className={`w-full flex items-center gap-2 pl-7 pr-3 py-1 mx-1 rounded-lg text-left transition ${
+                          className={`flex items-center gap-2 py-1 rounded-lg text-left transition ${
                             isActive
-                              ? "bg-teal-50 border-l-2 border-teal-500 text-teal-900 font-medium"
-                              : "text-teal-700 hover:bg-teal-50/60 hover:text-teal-900"
+                              ? "bg-teal-50 border-l-2 border-teal-500 text-teal-900 font-medium pl-[22px] pr-3"
+                              : "text-teal-700 hover:bg-teal-50/60 hover:text-teal-900 pl-6 pr-3"
                           }`}
+                          style={{ width: "calc(100% - 8px)", marginLeft: 4 }}
                         >
-                          {/* File icon */}
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" className={`flex-shrink-0 ${isActive ? "text-teal-500" : "text-teal-300"}`}>
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+                            className={`flex-shrink-0 ${isActive ? "text-teal-500" : "text-teal-300"}`}>
                             <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"
                               fill="currentColor" opacity="0.4" stroke="currentColor" strokeWidth="1.5"/>
                             <path d="M14 2v6h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
@@ -193,61 +188,12 @@ function SidebarInner({
         )}
       </div>
 
-      {/* Footer count */}
+      {/* Footer */}
       <div className="px-4 py-2 border-t border-teal-50">
         <p className="text-[10px] text-teal-400">
           {medicines.length} remedies · Boericke MM
         </p>
       </div>
     </div>
-  );
-}
-
-export function MedicineTree({ medicines, activeMedicine, onSelect, isOpen, onClose }: Props) {
-  return (
-    <>
-      {/* Desktop: always visible */}
-      <div className="hidden md:flex flex-col h-full w-64 flex-shrink-0">
-        <SidebarInner
-          medicines={medicines}
-          activeMedicine={activeMedicine}
-          onSelect={onSelect}
-          onClose={onClose}
-          isMobileDrawer={false}
-        />
-      </div>
-
-      {/* Mobile: slide-in drawer overlay */}
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={onClose}
-              className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px] md:hidden"
-            />
-            {/* Drawer */}
-            <motion.div
-              initial={{ x: -280 }}
-              animate={{ x: 0 }}
-              exit={{ x: -280 }}
-              transition={{ type: "spring", damping: 28, stiffness: 280 }}
-              className="fixed inset-y-0 left-0 z-50 w-72 md:hidden shadow-2xl"
-            >
-              <SidebarInner
-                medicines={medicines}
-                activeMedicine={activeMedicine}
-                onSelect={onSelect}
-                onClose={onClose}
-                isMobileDrawer={true}
-              />
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </>
   );
 }
