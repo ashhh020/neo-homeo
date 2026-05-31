@@ -1,6 +1,8 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { getGeminiApiKey } from "./env";
+import Groq from "groq-sdk";
+import { getGroqApiKey } from "./env";
 import type { ChatTurn } from "./gemini";
+
+const MODEL = "llama-3.3-70b-versatile";
 
 const STUDENT_SYSTEM = `You are a homeopathy research assistant for NeoHomeo's Student Portal.
 Your audience is students and practitioners studying classical homeopathy.
@@ -20,35 +22,38 @@ Do NOT give personal medical advice, diagnoses, or tell users which remedy to ta
 Always remind students this information is for educational study purposes.`;
 
 export async function generateStudentReply(history: ChatTurn[]): Promise<string> {
-  const key = getGeminiApiKey();
+  const key = getGroqApiKey();
 
   if (!key) {
-    return `I'm in demo mode — add your VITE_GEMINI_API_KEY to enable full AI research assistance.
+    return `I'm in demo mode — add your VITE_GROQ_API_KEY to enable full AI research assistance.
 
 To get started, try searching for a medicine in the sidebar on the left, or ask me anything about homeopathy!`;
   }
 
-  const genAI = new GoogleGenerativeAI(key);
-  const model = genAI.getGenerativeModel({
-    model: "gemini-2.0-flash",
-    systemInstruction: STUDENT_SYSTEM,
-  });
-
-  const prior = history.slice(0, -1);
   const latest = history[history.length - 1];
-
   if (!latest || latest.role !== "user") {
     throw new Error("Latest message must be from the user.");
   }
 
-  const contents = [
+  const prior = history.slice(0, -1);
+
+  const client = new Groq({ apiKey: key, dangerouslyAllowBrowser: true });
+
+  const messages: Groq.Chat.ChatCompletionMessageParam[] = [
+    { role: "system", content: STUDENT_SYSTEM },
     ...prior.map((h) => ({
-      role: h.role === "user" ? ("user" as const) : ("model" as const),
-      parts: [{ text: h.text }],
+      role: (h.role === "user" ? "user" : "assistant") as "user" | "assistant",
+      content: h.text,
     })),
-    { role: "user" as const, parts: [{ text: latest.text }] },
+    { role: "user", content: latest.text },
   ];
 
-  const res = await model.generateContent({ contents });
-  return res.response.text().trim();
+  const completion = await client.chat.completions.create({
+    model: MODEL,
+    messages,
+    temperature: 0.7,
+    max_tokens: 2048,
+  });
+
+  return (completion.choices[0].message.content ?? "").trim();
 }

@@ -11,10 +11,15 @@ export function isAdminEmail(email: string | null | undefined): boolean {
   return getAdminEmails().includes(email.toLowerCase());
 }
 
-export function getGeminiApiKey(): string | undefined {
-  const k = import.meta.env.VITE_GEMINI_API_KEY ?? "";
+export function getGroqApiKey(): string | undefined {
+  const k = import.meta.env.VITE_GROQ_API_KEY ?? "";
   if (k && !k.includes("YOUR_")) return k;
   return undefined;
+}
+
+/** @deprecated renamed to getGroqApiKey */
+export function getGeminiApiKey(): string | undefined {
+  return getGroqApiKey();
 }
 
 export function getSiteUrl(): string {

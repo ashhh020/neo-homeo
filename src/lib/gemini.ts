@@ -1,7 +1,9 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { getGeminiApiKey } from "./env";
+import Groq from "groq-sdk";
+import { getGroqApiKey } from "./env";
 
 export type ChatTurn = { role: "user" | "model"; text: string };
+
+const MODEL = "llama-3.3-70b-versatile";
 
 const SYSTEM = `You are Dr. Neo, a warm, empathetic junior homeopathy assistant for NeoHomeo.
 You conduct a preliminary health assessment only. Never give a final diagnosis or prescribe specific remedies with certainty.
@@ -57,7 +59,7 @@ export function extractAssessmentJson(text: string): { summary: string; raw: str
   }
 }
 
-function buildInstruction(patientContext?: string): string {
+function buildSystemPrompt(patientContext?: string): string {
   if (!patientContext?.trim()) return SYSTEM;
   return `${SYSTEM}${NO_REPEAT}
 
@@ -70,8 +72,11 @@ export async function generateNeoReply(
   historyIncludingLatestUser: ChatTurn[],
   patientContext?: string
 ): Promise<string> {
-  const key = getGeminiApiKey();
-  const userTurns = historyIncludingLatestUser.filter((h) => h.role === "user" && !h.text.startsWith("[session]"));
+  const key = getGroqApiKey();
+  const userTurns = historyIncludingLatestUser.filter(
+    (h) => h.role === "user" && !h.text.startsWith("[session]")
+  );
+
   if (!key) {
     if (userTurns.length >= 3) {
       const last = userTurns.map((t) => t.text).join(" ");
@@ -87,30 +92,38 @@ export async function generateNeoReply(
 [ASSESSMENT_COMPLETE]
 ${JSON.stringify(summaryObj)}`;
     }
-    return `I am ready to listen. (Add VITE_GEMINI_API_KEY for full AI.)
+    return `I am ready to listen. (Add VITE_GROQ_API_KEY for full AI.)
 
 [OPTIONS] Headache | Skin issue | Digestive discomfort | Stress or anxiety | Something else`;
   }
-  const genAI = new GoogleGenerativeAI(key);
-  const model = genAI.getGenerativeModel({
-    model: "gemini-2.0-flash",
-    systemInstruction: buildInstruction(patientContext),
-  });
+
+  const client = new Groq({ apiKey: key, dangerouslyAllowBrowser: true });
+
+  // Build messages array: system + chat history
   const prior = historyIncludingLatestUser.slice(0, -1);
   const latest = historyIncludingLatestUser[historyIncludingLatestUser.length - 1];
+
   if (!latest || latest.role !== "user") {
     throw new Error("Latest message must be from the patient.");
   }
-  const contents = [
+
+  const messages: Groq.Chat.ChatCompletionMessageParam[] = [
+    { role: "system", content: buildSystemPrompt(patientContext) },
     ...prior.map((h) => ({
-      role: h.role === "user" ? ("user" as const) : ("model" as const),
-      parts: [{ text: h.text }],
+      role: (h.role === "user" ? "user" : "assistant") as "user" | "assistant",
+      content: h.text,
     })),
-    { role: "user" as const, parts: [{ text: latest.text }] },
+    { role: "user", content: latest.text },
   ];
-  const res = await model.generateContent({ contents });
-  const t = res.response.text();
-  return t.trim();
+
+  const completion = await client.chat.completions.create({
+    model: MODEL,
+    messages,
+    temperature: 0.7,
+    max_tokens: 1024,
+  });
+
+  return (completion.choices[0].message.content ?? "").trim();
 }
 
 export const LANGUAGE_BCP47: Record<string, string> = {
