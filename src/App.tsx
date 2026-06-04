@@ -86,34 +86,99 @@ function DoctorGate({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-const PAGE_TITLES: Record<string, string> = {
-  "/":                    "NeoHomeo — AI-Powered Homeopathic Care",
-  "/login":               "Login — NeoHomeo",
-  "/signup":              "Sign Up — NeoHomeo",
-  "/forgot-password":     "Reset Password — NeoHomeo",
-  "/dashboard":           "My Dashboard — NeoHomeo",
-  "/assessment":          "Dr. Neo Assessment — NeoHomeo",
-  "/onboarding/patient":  "Complete Your Profile — NeoHomeo",
-  "/apply":               "Apply as a Doctor — NeoHomeo",
-  "/doctor":              "Doctor Dashboard — NeoHomeo",
-  "/admin":               "Admin Dashboard — NeoHomeo",
-  "/admin/login":         "Admin Login — NeoHomeo",
-  "/student":             "Student Portal — NeoHomeo",
+type PageMeta = { title: string; description: string };
+
+const PAGE_META: Record<string, PageMeta> = {
+  "/": {
+    title: "NeoHomeo — AI-Powered Homeopathy Consultations Online",
+    description: "Connect with verified homeopathic doctors through AI-assisted assessments. NeoHomeo matches your symptoms to the right physician for personalised care.",
+  },
+  "/login": {
+    title: "Login — NeoHomeo",
+    description: "Log in to your NeoHomeo patient account to view your consultations, prescriptions, and health records.",
+  },
+  "/signup": {
+    title: "Create Account — NeoHomeo",
+    description: "Sign up for NeoHomeo and start your AI-assisted homeopathic assessment today. Free to join.",
+  },
+  "/forgot-password": {
+    title: "Reset Password — NeoHomeo",
+    description: "Reset your NeoHomeo account password.",
+  },
+  "/dashboard": {
+    title: "My Dashboard — NeoHomeo",
+    description: "View your appointments, prescriptions, and health history on your NeoHomeo dashboard.",
+  },
+  "/assessment": {
+    title: "AI Health Assessment — NeoHomeo",
+    description: "Start a guided AI assessment with Dr. Neo. Your symptom history is prepared for your homeopathic doctor before the consultation.",
+  },
+  "/onboarding/patient": {
+    title: "Complete Your Profile — NeoHomeo",
+    description: "Set up your NeoHomeo patient profile to get matched with the right homeopathic doctor.",
+  },
+  "/apply": {
+    title: "Join NeoHomeo as a Doctor — Apply Now",
+    description: "Are you a licensed homeopathic practitioner? Apply to join NeoHomeo and consult patients online. Verified, flexible, and fully digital.",
+  },
+  "/doctor": {
+    title: "Doctor Dashboard — NeoHomeo",
+    description: "Manage your appointments, patient cases, and prescriptions on the NeoHomeo doctor dashboard.",
+  },
+  "/admin": {
+    title: "Admin Dashboard — NeoHomeo",
+    description: "NeoHomeo operations panel.",
+  },
+  "/admin/login": {
+    title: "Admin Login — NeoHomeo",
+    description: "NeoHomeo operations login.",
+  },
+  "/legal/privacy": {
+    title: "Privacy Policy — NeoHomeo",
+    description: "Read NeoHomeo's privacy policy — how we collect, use, and protect your personal and health data.",
+  },
+  "/legal/terms": {
+    title: "Terms of Use — NeoHomeo",
+    description: "Read the terms and conditions for using the NeoHomeo platform.",
+  },
+  "/legal/disclaimer": {
+    title: "Medical Disclaimer — NeoHomeo",
+    description: "Important information about the limitations of AI-assisted intake and homeopathic care on NeoHomeo.",
+  },
+  "/legal/refund": {
+    title: "Refund Policy — NeoHomeo",
+    description: "NeoHomeo's refund and cancellation policy for consultations and medicine orders.",
+  },
 };
+
+function setMetaDescription(content: string) {
+  let el = document.querySelector<HTMLMetaElement>('meta[name="description"]');
+  if (!el) {
+    el = document.createElement("meta");
+    el.name = "description";
+    document.head.appendChild(el);
+  }
+  el.content = content;
+}
 
 function PageTitleSetter() {
   const { pathname } = useLocation();
   useEffect(() => {
-    const exact = PAGE_TITLES[pathname];
-    if (exact) {
-      document.title = exact;
+    const meta = PAGE_META[pathname];
+    if (meta) {
+      document.title = meta.title;
+      setMetaDescription(meta.description);
       return;
     }
-    // dynamic routes like /doctors/:id
     if (pathname.startsWith("/doctors/")) {
       document.title = "Doctor Profile — NeoHomeo";
+      setMetaDescription("View this verified homeopathic doctor's profile, specialisations, and book a consultation on NeoHomeo.");
+    } else if (pathname.startsWith("/legal/")) {
+      document.title = "Legal — NeoHomeo";
+      setMetaDescription("NeoHomeo legal information.");
     } else {
-      document.title = "NeoHomeo — AI-Powered Homeopathic Care";
+      document.title = "NeoHomeo — AI-Powered Homeopathy Consultations Online";
+      setMetaDescription("Connect with verified homeopathic doctors through AI-assisted assessments on NeoHomeo.");
     }
   }, [pathname]);
   return null;
