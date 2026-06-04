@@ -162,7 +162,7 @@ export default function Landing() {
           <Link to="/"><NeoLogo compact /></Link>
 
           <div className="hidden md:flex gap-7 text-xs font-bold text-teal-800 uppercase tracking-widest">
-            {[["#treatments", "Treatments"], ["#how", "How it works"], ["#neo", "Dr. Neo"], ["#faq", "FAQ"]].map(([href, label]) => (
+            {[["#treatments", "Treatments"], ["#how", "How it works"], ["#neo", "Dr. Neo"], ["#faq", "FAQ"], ["/about", "About"]].map(([href, label]) => (
               <a key={href} href={href} className="hover:text-teal-600 transition">{label}</a>
             ))}
           </div>
@@ -186,7 +186,7 @@ export default function Landing() {
             initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
             className="absolute top-16 left-4 right-4 bg-white/95 backdrop-blur rounded-3xl border border-teal-100 shadow-xl p-4 flex flex-col gap-2"
           >
-            {[["#treatments", "Treatments"], ["#how", "How it works"], ["#neo", "Dr. Neo"], ["#faq", "FAQ"]].map(([href, label]) => (
+            {[["#treatments", "Treatments"], ["#how", "How it works"], ["#neo", "Dr. Neo"], ["#faq", "FAQ"], ["/about", "About"]].map(([href, label]) => (
               <a key={href} href={href} onClick={() => setMobileMenuOpen(false)}
                 className="text-sm font-semibold text-teal-900 px-4 py-2 rounded-2xl hover:bg-teal-50">
                 {label}
@@ -274,7 +274,7 @@ export default function Landing() {
 
             <motion.p
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.38 }}
-              className="text-base md:text-lg text-teal-900/65 leading-relaxed"
+              className="text-base md:text-lg text-teal-900/65 leading-relaxed hero-speakable"
             >
               Connect with certified homeopathic doctors through AI-assisted consultations, manage your health records, and receive personalized remedies — all from the comfort of your home.
             </motion.p>
@@ -558,9 +558,10 @@ export default function Landing() {
           <div>
             <p className="font-bold text-teal-900 mb-3">Company</p>
             <ul className="space-y-2">
-              <li><Link to="/admin/login" className="hover:text-teal-700 transition">Operations login</Link></li>
+              <li><Link to="/about" className="hover:text-teal-700 transition">About NeoHomeo</Link></li>
               <li><a href="#how" className="hover:text-teal-700 transition">How it works</a></li>
-              <li><Link to="/apply" className="hover:text-teal-700 transition">Doctors</Link></li>
+              <li><Link to="/apply" className="hover:text-teal-700 transition">Join as a doctor</Link></li>
+              <li><Link to="/admin/login" className="hover:text-teal-700 transition">Operations login</Link></li>
             </ul>
           </div>
           <div>

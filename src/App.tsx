@@ -13,6 +13,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Legal from "./pages/Legal";
+import About from "./pages/About";
 const ConditionPage = lazy(() => import("./pages/ConditionPage"));
 
 // Lazy load heavy pages
@@ -133,6 +134,10 @@ const PAGE_META: Record<string, PageMeta> = {
   "/admin/login": {
     title: "Admin Login — NeoHomeo",
     description: "NeoHomeo operations login.",
+  },
+  "/about": {
+    title: "About NeoHomeo — AI-Powered Homeopathy Platform India",
+    description: "Learn about NeoHomeo — India's AI-powered homeopathy platform. Our mission, values, story, and the team bringing modern homeopathic care online.",
   },
   "/legal/privacy": {
     title: "Privacy Policy — NeoHomeo",
@@ -263,6 +268,9 @@ export default function App() {
           </SessionGate>
         }
       />
+
+      {/* About */}
+      <Route path="/about" element={<About />} />
 
       {/* Legal pages */}
       <Route path="/legal/:slug" element={<Legal />} />
