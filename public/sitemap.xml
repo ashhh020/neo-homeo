@@ -30,6 +30,18 @@
     <priority>0.5</priority>
   </url>
 
+  <!-- Condition pages -->
+  <url><loc>https://neohomeo.com/conditions/skin-problems</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://neohomeo.com/conditions/hair-fall</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://neohomeo.com/conditions/migraine</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://neohomeo.com/conditions/pcos</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://neohomeo.com/conditions/thyroid</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://neohomeo.com/conditions/stress-anxiety</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://neohomeo.com/conditions/allergies</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://neohomeo.com/conditions/joint-pain</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://neohomeo.com/conditions/digestive</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://neohomeo.com/conditions/children</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+
   <url>
     <loc>https://neohomeo.com/legal/privacy</loc>
     <changefreq>yearly</changefreq>

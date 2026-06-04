@@ -13,6 +13,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Legal from "./pages/Legal";
+const ConditionPage = lazy(() => import("./pages/ConditionPage"));
 
 // Lazy load heavy pages
 const PatientDashboard  = lazy(() => import("./pages/PatientDashboard"));
@@ -176,6 +177,8 @@ function PageTitleSetter() {
     } else if (pathname.startsWith("/legal/")) {
       document.title = "Legal — NeoHomeo";
       setMetaDescription("NeoHomeo legal information.");
+    } else if (pathname.startsWith("/conditions/")) {
+      // handled by ConditionPage via useEffect on mount
     } else {
       document.title = "NeoHomeo — AI-Powered Homeopathy Consultations Online";
       setMetaDescription("Connect with verified homeopathic doctors through AI-assisted assessments on NeoHomeo.");
@@ -263,6 +266,9 @@ export default function App() {
 
       {/* Legal pages */}
       <Route path="/legal/:slug" element={<Legal />} />
+
+      {/* Condition pages */}
+      <Route path="/conditions/:slug" element={<LazyBoundary><ConditionPage /></LazyBoundary>} />
 
       <Route path="*" element={<NotFound />} />
     </Routes>

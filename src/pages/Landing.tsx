@@ -56,16 +56,16 @@ const steps = [
 ];
 
 const categories = [
-  { title: "Skin problems", desc: "Eczema, acne, and chronic irritation patterns." },
-  { title: "Hair fall", desc: "Diffuse shedding, post-illness recovery, scalp health." },
-  { title: "Migraine", desc: "Aura, triggers, menstrual association, and relief rhythm." },
-  { title: "PCOS", desc: "Cycles, metabolic signals, and mood-linked symptoms." },
-  { title: "Thyroid balance", desc: "Energy, temperature sensitivity, and weight shifts." },
-  { title: "Stress & anxiety", desc: "Sleep, focus, and how your body holds tension." },
-  { title: "Allergies", desc: "Seasonal flare, food sensitivity, and respiratory comfort." },
-  { title: "Joint pain", desc: "Morning stiffness, exertion limits, and inflammation cues." },
-  { title: "Digestive issues", desc: "Bloating, acidity, appetite swings, and elimination." },
-  { title: "Children's care", desc: "Gentle, age-aware history taking with caregiver support." },
+  { title: "Skin problems", desc: "Eczema, acne, and chronic irritation patterns.", slug: "skin-problems" },
+  { title: "Hair fall", desc: "Diffuse shedding, post-illness recovery, scalp health.", slug: "hair-fall" },
+  { title: "Migraine", desc: "Aura, triggers, menstrual association, and relief rhythm.", slug: "migraine" },
+  { title: "PCOS", desc: "Cycles, metabolic signals, and mood-linked symptoms.", slug: "pcos" },
+  { title: "Thyroid balance", desc: "Energy, temperature sensitivity, and weight shifts.", slug: "thyroid" },
+  { title: "Stress & anxiety", desc: "Sleep, focus, and how your body holds tension.", slug: "stress-anxiety" },
+  { title: "Allergies", desc: "Seasonal flare, food sensitivity, and respiratory comfort.", slug: "allergies" },
+  { title: "Joint pain", desc: "Morning stiffness, exertion limits, and inflammation cues.", slug: "joint-pain" },
+  { title: "Digestive issues", desc: "Bloating, acidity, appetite swings, and elimination.", slug: "digestive" },
+  { title: "Children's care", desc: "Gentle, age-aware history taking with caregiver support.", slug: "children" },
 ];
 
 const faqs = [
@@ -222,8 +222,7 @@ export default function Landing() {
         >
           <img
             src="/hero-doctors.png"
-            alt=""
-            aria-hidden
+            alt="Verified homeopathic doctors on NeoHomeo"
             draggable={false}
             className="h-full w-auto max-w-none object-cover object-bottom"
             style={{ transform: "translateX(20%)" }}
@@ -386,8 +385,8 @@ export default function Landing() {
               >
                 <h3 className="font-bold text-teal-950 text-sm">{c.title}</h3>
                 <p className="text-xs text-teal-900/60 leading-relaxed flex-1">{c.desc}</p>
-                <Link to="/assessment" className="text-xs font-bold text-teal-600 group-hover:text-teal-800 transition">
-                  Assess now →
+                <Link to={`/conditions/${c.slug}`} className="text-xs font-bold text-teal-600 group-hover:text-teal-800 transition">
+                  Learn more →
                 </Link>
               </motion.div>
             ))}
